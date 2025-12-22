@@ -1,0 +1,88 @@
+/* Profile.module.css */
+
+.profileContainer {
+  width: 100vw;
+  height: 100vh;
+  background-color: #3852bb;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+.profileContent{
+  width: 100vw;
+  height: 100vh;
+  padding: 20px;
+  background-color: #97a5e1;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.profileContainer h1 {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  color: #2f3640;
+}
+
+.profileCard {
+  background-color: #ffffff;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.5rem;
+}
+
+.profileCard p {
+  font-size: 1rem;
+  color: #2f3640;
+  margin-bottom: 0.75rem;
+}
+
+.settingsCard {
+  background-color: #ffffff;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.5rem;
+}
+
+.settingsCard h2 {
+  margin-bottom: 1rem;
+  color: #2f3640;
+}
+
+.settingsCard p {
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  color: #40739e;
+  transition: color 0.2s ease;
+}
+
+.settingsCard p:hover {
+  color: #273c75;
+  text-decoration: underline;
+}
+
+.logoutButton {
+  display: block;
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #e84118;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-bottom: 2rem;
+}
+
+.logoutButton:hover {
+  background-color: #c23616;
+}
+.loading{
+    width: 100vw;
+    height: 100vh;
+    background-color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
