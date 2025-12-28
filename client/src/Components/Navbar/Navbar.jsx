@@ -6,6 +6,7 @@ import { IoAddCircle, IoHome } from "react-icons/io5";
 import { MdDashboard, MdHistory } from "react-icons/md";
 import { IoIosAdd } from "react-icons/io";
 import { TbLayoutDashboardFilled } from "react-icons/tb";
+import { FaCogs } from "react-icons/fa";
 
 function Navbar() {
   const location = useLocation();
@@ -52,10 +53,10 @@ function Navbar() {
       </Link>
 
       <Link
-        to="/history"
-        className={`${style.navItem} ${location.pathname === "/history" ? style.active : ""}`}
+        to="/system"
+        className={`${style.navItem} ${location.pathname === "/system" ? style.active : ""}`}
       >
-        <MdHistory className={style.reactIcons} />
+        <FaCogs className={style.reactIcons} />
       </Link>
 
       <Link

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Navbar from "../../Components/Navbar/Navbar";
 import style from "./Profile.module.css";
+import Header from "../../Components/Header/Header";
 
 const backendURL = "http://localhost:3000";
 
@@ -47,8 +48,10 @@ function Profile() {
             <p>Loading user info...</p>
           </div>
         ) : user ? (
+            <>
+            <Header />  
           <div className={style.profileContent}>
-            <h1>My Profile</h1>
+            
 
             <div className={style.profileCard}>
               <p>
@@ -70,6 +73,7 @@ function Profile() {
               Logout
             </button>
           </div>
+          </>
         ) : (
           <p>User data not found</p>
         )}

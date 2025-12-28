@@ -1,83 +1,95 @@
 /* Profile.module.css */
-
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 .profileContainer {
   width: 100vw;
   height: 100vh;
-  background-color: #3852bb;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  background-color: #97a5e1;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 .profileContent{
   width: 100vw;
   height: 100vh;
   padding: 20px;
-  background-color: #97a5e1;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  padding-top: 80px;
+  background-color: #6071F5;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.profileContainer h1 {
-  text-align: center;
-  margin-bottom: 1.5rem;
-  color: #2f3640;
+
+/* General card styles */
+.profileCard,
+.settingsCard {
+  background-color: #ffffff; /* light neutral background */
+  padding: 1.8rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* soft shadow */
+  margin-bottom: 1rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  font-weight: 500;
 }
 
-.profileCard {
-  background-color: #ffffff;
-  padding: 1.5rem;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  margin-bottom: 1.5rem;
+.profileCard:hover,
+.settingsCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
+/* Profile card text */
 .profileCard p {
   font-size: 1rem;
-  color: #2f3640;
-  margin-bottom: 0.75rem;
+  color: #1f2937; /* dark gray text for better readability */
+  margin-bottom: 0.8rem;
+  line-height: 1.5;
 }
 
-.settingsCard {
-  background-color: #ffffff;
-  padding: 1.5rem;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  margin-bottom: 1.5rem;
-}
-
+/* Settings card heading */
 .settingsCard h2 {
   margin-bottom: 1rem;
-  color: #2f3640;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827; /* deeper dark gray */
 }
 
+/* Settings items */
 .settingsCard p {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
   cursor: pointer;
-  color: #40739e;
-  transition: color 0.2s ease;
+  color: #374151;
+  transition: color 0.2s ease, transform 0.2s ease;
 }
 
 .settingsCard p:hover {
-  color: #273c75;
-  text-decoration: underline;
+  color: #2563eb; /* subtle blue highlight */
+  transform: translateX(4px);
+  text-decoration: none;
 }
 
+/* Logout button */
 .logoutButton {
   display: block;
   width: 100%;
-  padding: 0.75rem;
-  background-color: #e84118;
+  padding: 0.85rem;
+  background-color: #ef4444; /* modern red */
   color: white;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 1rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3s ease, transform 0.2s ease;
   margin-bottom: 2rem;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
 }
 
 .logoutButton:hover {
-  background-color: #c23616;
+  background-color: #dc2626; /* slightly darker red */
+  transform: translateY(-2px);
 }
+
 .loading{
     width: 100vw;
     height: 100vh;

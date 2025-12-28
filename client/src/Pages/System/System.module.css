@@ -1,0 +1,80 @@
+/* Container */
+.container {
+  height: 100vh;
+  width: 100vw;
+  background: #6A7BFE;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Poppins', sans-serif;
+  text-align: center;
+}
+
+/* Title */
+.title {
+  font-size: 2.5rem;
+  margin-bottom: 50px;
+  letter-spacing: 3px;
+  font-weight: 600;
+  color: #f1f5f9;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+/* Power Button */
+.powerBtn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  transition: 0.3s ease, transform 0.2s ease;
+  position: relative;
+  background: #374151;
+  box-shadow: 0 0 20px #00000080, inset 0 0 10px #00000050;
+}
+
+/* Hover effect */
+.powerBtn:hover {
+  transform: scale(1.1);
+}
+
+/* On state */
+.on {
+  background: radial-gradient(circle, #22c55e, #16a34a);
+  box-shadow: 0 0 40px #22c55e, 0 0 60px #16a34a inset;
+  color: white;
+  animation: pulse 1.5s infinite;
+}
+
+/* Off state */
+.off {
+  background: radial-gradient(circle, #374151, #1f2937);
+  box-shadow: 0 0 30px #ff0000, 0 0 50px #ff0000 inset;
+  color: #ffffff;
+}
+
+/* Status text */
+.status {
+  margin-top: 35px;
+  font-size: 1.2rem;
+  letter-spacing: 1.5px;
+  font-weight: 500;
+}
+
+/* On/Off colors */
+
+/* Optional pulse animation for ON state */
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 40px #22c55e, 0 0 60px #16a34a inset;
+  }
+  50% {
+    box-shadow: 0 0 60px #22c55e, 0 0 80px #16a34a inset;
+  }
+}

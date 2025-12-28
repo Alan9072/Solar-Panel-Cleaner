@@ -8,6 +8,7 @@ import Status from "./Pages/Status/Status.jsx";
 import AddDevice from "./Pages/AddDevice/AddDevice.jsx"; // New Add Device page
 import Profile from "./Pages/Profile/Profile.jsx"; // Profile page
 import History from "./Pages/History/History.jsx"; // History page
+import System from "./Pages/System/System.jsx"; // LED Control page
 
 function App() {
   return (
@@ -21,7 +22,7 @@ function App() {
         <Route element={<ProtectedRoutes />}>
           <Route path="/" element={<Status/>} />
           <Route path="/add" element={<AddDevice />} />
-          <Route path="/history" element={<History />} />
+          <Route path="/system" element={<System />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
       </Routes>
