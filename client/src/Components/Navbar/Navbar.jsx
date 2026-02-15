@@ -7,6 +7,8 @@ import { MdDashboard, MdHistory } from "react-icons/md";
 import { IoIosAdd } from "react-icons/io";
 import { TbLayoutDashboardFilled } from "react-icons/tb";
 import { FaCogs } from "react-icons/fa";
+import { IoAnalytics } from "react-icons/io5";
+
 
 function Navbar() {
   const location = useLocation();
@@ -46,10 +48,10 @@ function Navbar() {
       </Link>
 
       <Link
-        to="/add"
-        className={`${style.navItem} ${location.pathname === "/add" ? style.active : ""}`}
+        to="/status"
+        className={`${style.navItem} ${location.pathname === "/status" ? style.active : ""}`}
       >
-        <IoAddCircle className={style.reactIcons} />
+        <IoAnalytics className={style.reactIcons} />
       </Link>
 
       <Link

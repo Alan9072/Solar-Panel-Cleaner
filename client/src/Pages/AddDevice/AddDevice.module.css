@@ -1,0 +1,233 @@
+.container{
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #6A7BFE;
+    padding-bottom: 50px;
+    padding-top: 80px;
+    padding-left: 20px;
+    padding-right: 20px;
+    display: flex;
+    gap: 10px;
+    font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+.titleSection {
+  padding: 30px 20px;
+  text-align: center;
+  background-color: #ffffff;
+  border-radius: 10px;
+}
+
+.mainTitle {
+  margin: 0;
+  font-size: 25px;
+  color: #333;
+}
+
+.subtitle {
+  margin: 10px 0 0 0;
+  color: #666;
+  font-size: small;
+}
+
+.imageSection {
+    background-color: #c6282800;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.imageContainer {
+  background-color: #fff;
+  padding: 20px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 270px;
+}
+
+.loadingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.421);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  z-index: 10;
+}
+
+.loadingText {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.errorContainer {
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  color: #c62828;
+  text-align: center;
+}
+
+.errorTitle {
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.errorMessage {
+  font-size: 14px;
+}
+
+.panelImage {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+.panelImageHidden {
+  display: none;
+}
+
+.buttonContainer {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.refreshButton {
+  padding: 12px 30px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.3s;
+}
+
+.refreshButton:hover {
+  background-color: #45a049;
+}
+
+.detailsSection {
+  padding: 25px 20px;
+  margin: 0 auto;
+  background-color: #ffffff;
+  border-radius: 10px;
+  font-size: 15px;
+}
+
+.detailsTitle {
+  text-align: left;
+  margin-bottom: 30px;
+  color: #333;
+  font-weight: 500;
+}
+
+.detailsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.detailCard {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.detailCardTitle {
+  margin: 0 0 10px 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-weight: 400;
+}
+
+.detailCardTitleGreen {
+  color: #4CAF50;
+}
+
+.detailCardTitleBlue {
+  color: #2196F3;
+}
+
+.detailCardTitleOrange {
+  color: #FF9800;
+}
+
+.detailCardText {
+  margin: 0;
+  color: #666;
+}
+.live{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background-color: #fff;
+}
+
+.liveStatus {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.liveStatus p {
+    margin: 0;
+    font-weight: 500;
+    color: #333;
+}
+
+.liveDot {
+    width: 10px;
+    height: 10px;
+    background-color: #4CAF50;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 8px rgba(76, 175, 80, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+    }
+}
+
+.refreshButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.3s;
+}
+
+.refreshButton:hover {
+    background-color: #45a049;
+}
+
+.refreshButton svg {
+    width: 12px;
+    height: 12px;
+}

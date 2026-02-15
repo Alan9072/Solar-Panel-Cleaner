@@ -21,7 +21,7 @@ function App() {
         {/* Protected Routes */}
         <Route element={<ProtectedRoutes />}>
           <Route path="/" element={<Status/>} />
-          <Route path="/add" element={<AddDevice />} />
+          <Route path="/status" element={<AddDevice />} />
           <Route path="/system" element={<System />} />
           <Route path="/profile" element={<Profile />} />
         </Route>

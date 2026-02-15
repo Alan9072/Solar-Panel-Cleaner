@@ -5,6 +5,7 @@ import { CgProfile } from "react-icons/cg"; // Logo icon
 import { FaServer, FaPlusCircle, FaCogs } from "react-icons/fa"; // Optional icons per page
 import { MdDashboard } from "react-icons/md";
 import { TbLayoutDashboardFilled } from "react-icons/tb";
+import { IoAnalytics } from "react-icons/io5";
 
 function Header() {
   const location = useLocation();
@@ -14,8 +15,8 @@ function Header() {
     switch (location.pathname) {
       case "/":
         return { title: "Status Dashboard", icon: <TbLayoutDashboardFilled  /> };
-      case "/add":
-        return { title: "Add Device", icon: <FaPlusCircle /> };
+      case "/status":
+        return { title: "Panel Analytics", icon: <IoAnalytics /> };
       case "/system":
         return { title: "System Control", icon: <FaCogs /> };
       case "/profile":

@@ -6,6 +6,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import cookieParser from "cookie-parser";
 import user from './Models/User.js';
+import SystemState from './Models/SystemState.js';
 
 const corsOptions = {
   origin: 'http://localhost:5173',  // Your frontend URL
@@ -35,6 +36,45 @@ app.use(express.json());
 // Basic route
 app.get('/', (req, res) => {
     res.send('Server is running!');
+});
+
+// Save system state (ON/OFF)
+app.post('/api/system-state', async (req, res) => {
+  try {
+    const { state } = req.body;
+    const normalizedState = String(state || '').toUpperCase();
+
+    if (!['ON', 'OFF'].includes(normalizedState)) {
+      return res.status(400).send({ message: 'State must be ON or OFF' });
+    }
+
+    const updated = await SystemState.findOneAndUpdate(
+      { key: 'system' },
+      { state: normalizedState },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    );
+
+    return res.send({ state: updated.state, updatedAt: updated.updatedAt });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ message: 'Failed to save system state' });
+  }
+});
+
+// Load system state
+app.get('/api/system-state', async (req, res) => {
+  try {
+    const doc = await SystemState.findOne({ key: 'system' });
+
+    if (!doc) {
+      return res.send({ state: 'OFF' });
+    }
+
+    return res.send({ state: doc.state, updatedAt: doc.updatedAt });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ message: 'Failed to load system state' });
+  }
 });
 
 app.post("/register", async (req, res) => {

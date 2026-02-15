@@ -1,32 +1,114 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styles from "./System.module.css";
-import { FaToggleOff, FaToggleOn } from "react-icons/fa"; // icons for OFF and ON
+import { FaToggleOff, FaToggleOn, FaSpinner } from "react-icons/fa"; // icons for OFF and ON
 import Header from "../../Components/Header/Header";
 import Navbar from "../../Components/Navbar/Navbar";
 
-const API_URL = "https://0ezk16r0u1.execute-api.ap-south-1.amazonaws.com/control";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+const CLOUD_CONTROL_URL =
+  import.meta.env.VITE_CLOUD_CONTROL_URL ||
+  "https://0ezk16r0u1.execute-api.ap-south-1.amazonaws.com/control";
 
 function System() {
   const [status, setStatus] = useState("OFF");
-  const [loading, setLoading] = useState(false);
+  const [isPolling, setIsPolling] = useState(false);
+  const pollingRef = React.useRef(null); // Track active polling
+
+  const loadSystemState = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/system-state`, {
+        method: "GET",
+        credentials: "include",
+      });
+      const data = await res.json();
+      const currentState = String(data?.state || "OFF").toUpperCase();
+      return currentState;
+    } catch (err) {
+      console.error("Load state error:", err);
+      return null;
+    }
+  };
+
+  // Poll cloud API for 80 seconds in background
+  const pollCloudAPI = async (desiredState, pollId) => {
+    const maxAttempts = 80;
+    
+    console.log(`🔄 [Poll ${pollId}] Background polling started - Target: ${desiredState}`);
+    
+    for (let attempts = 0; attempts < maxAttempts; attempts++) {
+      // Check if this polling was cancelled
+      if (pollingRef.current !== pollId) {
+        console.log(`❌ [Poll ${pollId}] Cancelled - New polling started`);
+        return;
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      try {
+        const res = await fetch(CLOUD_CONTROL_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ state: desiredState.toLowerCase() }),
+        });
+        const data = await res.json();
+        const espState = data?.state ? String(data.state).toUpperCase() : "UNKNOWN";
+        
+        console.log(`📡 [Poll ${pollId}] [${attempts + 1}s] ESP State: ${espState} | Target: ${desiredState}`);
+        
+        if (espState === desiredState) {
+          console.log(`✅ [Poll ${pollId}] SUCCESS at ${attempts + 1}s - ESP confirmed ${desiredState}`);
+          if (pollingRef.current === pollId) {
+            setIsPolling(false);
+          }
+          return;
+        }
+      } catch (err) {
+        console.error(`[Poll ${pollId}] [${attempts + 1}s] Cloud API error:`, err);
+      }
+    }
+    
+    console.warn(`⚠️ [Poll ${pollId}] Timeout after 80 seconds`);
+    if (pollingRef.current === pollId) {
+      setIsPolling(false);
+    }
+  };
 
   const toggleSystem = async () => {
-    const newState = status === "ON" ? "off" : "on";
-    setLoading(true);
+    const currentState = status;
+    const newState = status === "ON" ? "OFF" : "ON";
+    
+    // Cancel any existing polling
+    const newPollId = Date.now();
+    pollingRef.current = newPollId;
+    
+    // 1. Immediately change button UI
+    setStatus(newState);
 
     try {
-      await fetch(API_URL, {
+      // 2. Update database
+      await fetch(`${API_BASE}/api/system-state`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ state: newState }),
       });
-      setStatus(newState.toUpperCase());
+
+      console.log(`✓ Button: ${newState}, Database: Updated`);
+      
+      // 3. Start new background polling (cancels previous)
+      setIsPolling(true);
+      pollCloudAPI(newState, newPollId);
     } catch (err) {
       console.error("API Error:", err);
+      setStatus(currentState);
     }
-
-    setLoading(false);
   };
+
+  useEffect(() => {
+    loadSystemState().then(state => {
+      if (state) setStatus(state);
+    });
+  }, []);
 
   const isOn = status === "ON";
 
@@ -47,7 +129,7 @@ function System() {
       </div>
 
       <p className={`${styles.status} ${isOn ? styles.onText : styles.offText}`}>
-        {loading ? "PROCESSING..." : `SYSTEM ${status}`}
+        {isPolling ? `SYSTEM ${status} - Syncing with ESP...` : `SYSTEM ${status}`}
       </p>
       <Navbar />
     </div>
