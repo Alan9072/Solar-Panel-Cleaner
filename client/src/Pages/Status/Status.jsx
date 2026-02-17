@@ -9,16 +9,7 @@ function Status() {
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
-
-  // Temporary chart data - you can replace these values
-  const chartData = [
-    { label: '12:00', value: 65 },
-    { label: '13:00', value: 75 },
-    { label: '14:00', value: 55 },
-    { label: '15:00', value: 85 },
-    { label: '16:00', value: 70 },
-    { label: '17:00', value: 90 },
-  ];
+  const [chartData, setChartData] = useState([]);
 
   const fetchTelemetry = async (isAutoRefresh = false) => {
     try {
@@ -29,13 +20,55 @@ function Status() {
       }
       
       const startTime = Date.now()
+      
+      // Fetch current telemetry data
       const response = await fetch('https://ri97neft0k.execute-api.ap-south-1.amazonaws.com/telemetry')
       const result = await response.json()
+      
+      // Fetch historical data for chart (last 5 records)
+      const historyResponse = await fetch('https://ri97neft0k.execute-api.ap-south-1.amazonaws.com/telemetry?limit=5')
+      const historyResult = await historyResponse.json()
       
       if (result.success) {
         setTelemetryData(result.data)
         setLastUpdated(new Date())
         setError(null)
+        
+        // Format historical data for chart
+        if (historyResult.success && historyResult.data) {
+          // Check if data is an array or single object
+          const dataArray = Array.isArray(historyResult.data) 
+            ? historyResult.data 
+            : [historyResult.data]
+          
+          const formattedChartData = dataArray.map((item) => {
+            const time = new Date(item.timestamp).toLocaleTimeString('en-US', { 
+              hour: '2-digit', 
+              minute: '2-digit',
+              second: '2-digit'
+            })
+            return {
+              label: time,
+              value: parseFloat(item.current_mA.toFixed(2)), // Using current for the chart
+              rawValue: item.current_mA
+            }
+          }).reverse() // Reverse to show oldest to newest
+          
+          // Scale values to percentages (0-100) for better visualization
+          const values = formattedChartData.map(d => d.value)
+          const minValue = Math.min(...values)
+          const maxValue = Math.max(...values)
+          const range = maxValue - minValue
+          
+          const scaledChartData = formattedChartData.map(item => ({
+            ...item,
+            displayValue: range > 0 
+              ? ((item.value - minValue) / range) * 80 + 20 // Scale to 20-100%
+              : 50 // If all values are same, show 50%
+          }))
+          
+          setChartData(scaledChartData)
+        }
       } else {
         setError('Failed to fetch telemetry data')
       }
@@ -59,8 +92,8 @@ function Status() {
 
   useEffect(() => {
     fetchTelemetry(false)
-    // Refresh data every 7 seconds
-    const interval = setInterval(() => fetchTelemetry(true), 7000)
+    // Refresh data and chart every 10 seconds
+    const interval = setInterval(() => fetchTelemetry(true), 10000)
     return () => clearInterval(interval)
   }, [])
 
@@ -142,16 +175,16 @@ function Status() {
         )}
 
         {/* Chart Section */}
-        {telemetryData && (
+        {telemetryData && chartData.length > 0 && (
           <div className={styles.chartSection}>
-            <h2 className={styles.chartTitle}>Power Usage Over Time</h2>
+            <h2 className={styles.chartTitle}>Current Consumption Over Time (mA)</h2>
             <div className={styles.chart}>
               {chartData.map((data, index) => (
                 <div key={index} className={styles.barWrapper}>
                   <div className={styles.barContainer}>
                     <div 
                       className={styles.bar} 
-                      style={{ height: `${data.value}%` }}
+                      style={{ height: `${data.displayValue}%` }}
                     >
                       <span className={styles.barValue}>{data.value}</span>
                     </div>
