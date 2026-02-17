@@ -10,6 +10,16 @@ function Status() {
   const [error, setError] = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
 
+  // Temporary chart data - you can replace these values
+  const chartData = [
+    { label: '12:00', value: 65 },
+    { label: '13:00', value: 75 },
+    { label: '14:00', value: 55 },
+    { label: '15:00', value: 85 },
+    { label: '16:00', value: 70 },
+    { label: '17:00', value: 90 },
+  ];
+
   const fetchTelemetry = async (isAutoRefresh = false) => {
     try {
       if (!isAutoRefresh) {
@@ -127,6 +137,28 @@ function Status() {
                   )}
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Chart Section */}
+        {telemetryData && (
+          <div className={styles.chartSection}>
+            <h2 className={styles.chartTitle}>Power Usage Over Time</h2>
+            <div className={styles.chart}>
+              {chartData.map((data, index) => (
+                <div key={index} className={styles.barWrapper}>
+                  <div className={styles.barContainer}>
+                    <div 
+                      className={styles.bar} 
+                      style={{ height: `${data.value}%` }}
+                    >
+                      <span className={styles.barValue}>{data.value}</span>
+                    </div>
+                  </div>
+                  <div className={styles.barLabel}>{data.label}</div>
+                </div>
+              ))}
             </div>
           </div>
         )}

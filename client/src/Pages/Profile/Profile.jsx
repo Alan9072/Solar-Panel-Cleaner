@@ -4,6 +4,18 @@ import axios from "axios";
 import Navbar from "../../Components/Navbar/Navbar";
 import style from "./Profile.module.css";
 import Header from "../../Components/Header/Header";
+import { 
+  FaUser, 
+  FaShieldAlt, 
+  FaBell, 
+  FaCog, 
+  FaChartLine, 
+  FaCloudUploadAlt,
+  FaHistory,
+  FaMicrochip,
+  FaSignOutAlt,
+  FaEdit
+} from "react-icons/fa";
 
 const backendURL = "http://localhost:3000";
 
@@ -48,31 +60,51 @@ function Profile() {
             <p>Loading user info...</p>
           </div>
         ) : user ? (
-            <>
-            <Header />  
-          <div className={style.profileContent}>
-            
+          <>
+            <Header />
+            <div className={style.profileContent}>
+              
+              {/* Profile Header */}
+              <div className={style.profileHeader}>
+                <div className={style.avatarSection}>
+                  <div className={style.avatar}>
+                    <FaUser />
+                  </div>
+                </div>
+                <div className={style.userInfo}>
+                  <h1 className={style.userName}>{user.name}</h1>
+                  <p className={style.userHandle}>{user.username}</p>
+                </div>
+              </div>
 
-            <div className={style.profileCard}>
-              <p>
-                <strong>Name:</strong> {user.name}
-              </p>
-              <p>
-                <strong>Username:</strong> {user.username}
-              </p>
+              {/* Quick Actions */}
+              <div className={style.section}>
+                <h3 className={style.sectionTitle}>Account Settings</h3>
+                <div className={style.actionGrid}>
+                  <button className={style.actionBtn}>
+                    <FaShieldAlt />
+                    <span>Security</span>
+                  </button>
+                  <button className={style.actionBtn}>
+                    <FaBell />
+                    <span>Notifications</span>
+                  </button>
+                  <button className={style.actionBtn}>
+                    <FaCog />
+                    <span>Preferences</span>
+                  </button>
+                  <button className={style.actionBtn}>
+                    <FaHistory />
+                    <span>History</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Logout Button */}
+              <button className={style.logoutButton} onClick={handleLogout}>
+                <FaSignOutAlt /> Logout
+              </button>
             </div>
-
-            <div className={style.settingsCard}>
-              <h2>Account Settings</h2>
-              <p>Change Password</p>
-              <p>Notification Preferences</p>
-              <p>Other Settings</p>
-            </div>
-
-            <button className={style.logoutButton} onClick={handleLogout}>
-              Logout
-            </button>
-          </div>
           </>
         ) : (
           <p>User data not found</p>

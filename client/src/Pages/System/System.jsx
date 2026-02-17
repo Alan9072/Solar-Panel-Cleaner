@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import styles from "./System.module.css";
-import { FaToggleOff, FaToggleOn, FaSpinner } from "react-icons/fa"; // icons for OFF and ON
+import { FaToggleOff, FaToggleOn, FaSpinner, FaMapMarkerAlt, FaWifi, FaMicrochip, FaClock } from "react-icons/fa";
 import Header from "../../Components/Header/Header";
 import Navbar from "../../Components/Navbar/Navbar";
 
@@ -115,13 +115,42 @@ function System() {
   return (
     <div className={styles.container}>
       <Header />
-      <h2 className={styles.title}>SYSTEM CONTROL</h2>
 
+      {/* Info Cards */}
+      <div className={styles.infoGrid}>
+        <div className={styles.infoCard}>
+          <FaMapMarkerAlt className={styles.infoIcon} />
+          <div className={styles.infoLabel}>Location</div>
+          <div className={styles.infoValue}>AWS ap-south-1</div>
+        </div>
+        
+        <div className={styles.infoCard}>
+          <FaMicrochip className={styles.infoIcon} />
+          <div className={styles.infoLabel}>Mode</div>
+          <div className={styles.infoValue}>Active</div>
+        </div>
+        
+        <div className={styles.infoCard}>
+          <FaWifi className={styles.infoIcon} />
+          <div className={styles.infoLabel}>Connection</div>
+          <div className={styles.infoValue}>{isPolling ? "Syncing" : "Connected"}</div>
+        </div>
+        
+        <div className={styles.infoCard}>
+          <FaClock className={styles.infoIcon} />
+          <div className={styles.infoLabel}>Status</div>
+          <div className={styles.infoValue}>{status}</div>
+        </div>
+      </div>
+
+      {/* Power Button */}
       <div
         className={`${styles.powerBtn} ${isOn ? styles.on : styles.off}`}
         onClick={toggleSystem}
       >
-        {isOn ? (
+        {isPolling ? (
+          <FaSpinner className={styles.spinner} />
+        ) : isOn ? (
           <FaToggleOn className={styles.icon} />
         ) : (
           <FaToggleOff className={styles.icon} />
@@ -129,7 +158,22 @@ function System() {
       </div>
 
       <p className={`${styles.status} ${isOn ? styles.onText : styles.offText}`}>
-        {isPolling ? `SYSTEM ${status} - Syncing with ESP...` : `SYSTEM ${status}`}
+        {isPolling ? (
+          <>
+            <span className={styles.statusMain}>SYNCHRONIZING...</span>
+            <span className={styles.statusSub}>Connecting to ESP Device</span>
+          </>
+        ) : isOn ? (
+          <>
+            <span className={styles.statusMain}>✓ SYSTEM OPERATIONAL</span>
+            <span className={styles.statusSub}>All systems running normally</span>
+          </>
+        ) : (
+          <>
+            <span className={styles.statusMain}>⚠ SYSTEM OFFLINE</span>
+            <span className={styles.statusSub}>Press button to activate</span>
+          </>
+        )}
       </p>
       <Navbar />
     </div>

@@ -10,24 +10,66 @@
   justify-content: center;
   font-family: 'Poppins', sans-serif;
   text-align: center;
+  gap: 12px;
+}
+
+/* Info Grid */
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+  max-width: 340px;
+  width: 90%;
+}
+
+.infoCard {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  padding: 30px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.infoIcon {
+  font-size: 1.2rem;
+  color: #fff;
+  opacity: 0.9;
+}
+
+.infoLabel {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.infoValue {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
 }
 
 /* Title */
 .title {
-  font-size: 2.5rem;
-  margin-bottom: 50px;
-  letter-spacing: 3px;
+  font-size: 1.3rem;
+  margin-bottom: 12px;
+  letter-spacing: 1.5px;
   font-weight: 600;
   color: #f1f5f9;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
 }
 
 /* Power Button */
 .powerBtn {
-  width: 50px;
-  height: 50px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
-  font-size: 20px;
+  font-size: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -37,6 +79,7 @@
   position: relative;
   background: #374151;
   box-shadow: 0 0 20px #00000080, inset 0 0 10px #00000050;
+  margin-top: 8px;
 }
 
 /* Hover effect */
@@ -70,10 +113,26 @@
 
 /* Status text */
 .status {
-  margin-top: 35px;
-  font-size: 1.2rem;
-  letter-spacing: 1.5px;
+  margin-top: 15px;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
   font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.statusMain {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+}
+
+.statusSub {
+  font-size: 0.75rem;
+  opacity: 0.85;
+  font-weight: 400;
+  letter-spacing: 0.5px;
 }
 
 /* On/Off colors */
