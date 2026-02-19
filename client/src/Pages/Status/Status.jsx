@@ -25,8 +25,8 @@ function Status() {
       const response = await fetch('https://ri97neft0k.execute-api.ap-south-1.amazonaws.com/telemetry')
       const result = await response.json()
       
-      // Fetch historical data for chart (last 5 records)
-      const historyResponse = await fetch('https://ri97neft0k.execute-api.ap-south-1.amazonaws.com/telemetry?limit=5')
+      // Fetch historical data for chart (last 10 records)
+      const historyResponse = await fetch('https://ri97neft0k.execute-api.ap-south-1.amazonaws.com/telemetry?limit=10')
       const historyResult = await historyResponse.json()
       
       if (result.success) {
@@ -49,25 +49,14 @@ function Status() {
             })
             return {
               label: time,
-              value: parseFloat(item.current_mA.toFixed(2)), // Using current for the chart
-              rawValue: item.current_mA
+              power: parseFloat(item.power_W.toFixed(2)),
+              current: parseFloat(item.current_mA.toFixed(2)),
+              voltage: parseFloat(item.voltage.toFixed(4)),
+              timestamp: item.timestamp
             }
           }).reverse() // Reverse to show oldest to newest
           
-          // Scale values to percentages (0-100) for better visualization
-          const values = formattedChartData.map(d => d.value)
-          const minValue = Math.min(...values)
-          const maxValue = Math.max(...values)
-          const range = maxValue - minValue
-          
-          const scaledChartData = formattedChartData.map(item => ({
-            ...item,
-            displayValue: range > 0 
-              ? ((item.value - minValue) / range) * 80 + 20 // Scale to 20-100%
-              : 50 // If all values are same, show 50%
-          }))
-          
-          setChartData(scaledChartData)
+          setChartData(formattedChartData)
         }
       } else {
         setError('Failed to fetch telemetry data')
@@ -92,8 +81,8 @@ function Status() {
 
   useEffect(() => {
     fetchTelemetry(false)
-    // Refresh data and chart every 10 seconds
-    const interval = setInterval(() => fetchTelemetry(true), 10000)
+    // Refresh data and chart every 20 seconds
+    const interval = setInterval(() => fetchTelemetry(true), 20000)
     return () => clearInterval(interval)
   }, [])
 
@@ -177,21 +166,108 @@ function Status() {
         {/* Chart Section */}
         {telemetryData && chartData.length > 0 && (
           <div className={styles.chartSection}>
-            <h2 className={styles.chartTitle}>Current Consumption Over Time (mA)</h2>
-            <div className={styles.chart}>
-              {chartData.map((data, index) => (
-                <div key={index} className={styles.barWrapper}>
-                  <div className={styles.barContainer}>
-                    <div 
-                      className={styles.bar} 
-                      style={{ height: `${data.displayValue}%` }}
-                    >
-                      <span className={styles.barValue}>{data.value}</span>
+            <h2 className={styles.chartTitle}>Telemetry Over Time</h2>
+            <div className={styles.chartLegend}>
+              <div className={styles.legendItem}>
+                <span className={`${styles.legendColor} ${styles.powerLine}`}></span>
+                <span>Power (W)</span>
+              </div>
+              <div className={styles.legendItem}>
+                <span className={`${styles.legendColor} ${styles.currentLine}`}></span>
+                <span>Current (mA)</span>
+              </div>
+            </div>
+            <div className={styles.lineChartContainer}>
+              {/* Calculate ranges for axis labels */}
+              {(() => {
+                const powerValues = chartData.map(item => item.power)
+                const currentValues = chartData.map(item => item.current)
+                
+                const maxPower = Math.max(...powerValues)
+                const minPower = Math.min(...powerValues)
+                const maxCurrent = Math.max(...currentValues)
+                const minCurrent = Math.min(...currentValues)
+                
+                // Add 20% padding to ranges for better visualization
+                const powerPadding = (maxPower - minPower) * 0.2 || 0.5
+                const currentPadding = (maxCurrent - minCurrent) * 0.2 || 5
+                
+                const powerMin = Math.max(0, minPower - powerPadding)
+                const powerMax = maxPower + powerPadding
+                const currentMin = Math.max(0, minCurrent - currentPadding)
+                const currentMax = maxCurrent + currentPadding
+                
+                // Create axis labels (5 levels)
+                const powerLabels = []
+                const currentLabels = []
+                for (let i = 4; i >= 0; i--) {
+                  powerLabels.push((powerMin + (powerMax - powerMin) * (i / 4)).toFixed(2))
+                  currentLabels.push((currentMin + (currentMax - currentMin) * (i / 4)).toFixed(1))
+                }
+                
+                return (
+                  <>
+                    {/* Left Y-axis (Current/Voltage) */}
+                    <div className={styles.yAxisLeft}>
+                      {currentLabels.map((label, idx) => (
+                        <span key={idx} className={styles.yLabel}>{label}</span>
+                      ))}
                     </div>
-                  </div>
-                  <div className={styles.barLabel}>{data.label}</div>
-                </div>
-              ))}
+                    
+                    <div className={styles.chartArea}>
+                      <svg className={styles.lineChart} viewBox="0 0 500 200" preserveAspectRatio="none">
+                        {/* Grid lines */}
+                        <line x1="0" y1="10" x2="500" y2="10" stroke="#e0e0e0" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
+                        <line x1="0" y1="55" x2="500" y2="55" stroke="#e0e0e0" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
+                        <line x1="0" y1="100" x2="500" y2="100" stroke="#e0e0e0" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
+                        <line x1="0" y1="145" x2="500" y2="145" stroke="#e0e0e0" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
+                        <line x1="0" y1="190" x2="500" y2="190" stroke="#e0e0e0" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
+                        
+                        {/* Power Line (Right axis scale) */}
+                        <polyline
+                          points={chartData.map((d, i) => {
+                            const x = (i / Math.max(chartData.length - 1, 1)) * 500
+                            const range = powerMax - powerMin
+                            const normalized = range > 0 ? (d.power - powerMin) / range : 0.5
+                            const y = 190 - (normalized * 180) + 5
+                            return `${x},${y}`
+                          }).join(' ')}
+                          fill="none"
+                          stroke="#667eea"
+                          strokeWidth="2.5"
+                          vectorEffect="non-scaling-stroke"
+                        />
+                        
+                        {/* Current Line (Left axis scale) */}
+                        <polyline
+                          points={chartData.map((d, i) => {
+                            const x = (i / Math.max(chartData.length - 1, 1)) * 500
+                            const range = currentMax - currentMin
+                            const normalized = range > 0 ? (d.current - currentMin) / range : 0.5
+                            const y = 190 - (normalized * 180)
+                            return `${x},${y}`
+                          }).join(' ')}
+                          fill="none"
+                          stroke="#ef4444"
+                          strokeWidth="2.5"
+                          vectorEffect="non-scaling-stroke"
+                        />
+                      </svg>
+                    </div>
+                    
+                    {/* Right Y-axis (Power) */}
+                    <div className={styles.yAxisRight}>
+                      {powerLabels.map((label, idx) => (
+                        <span key={idx} className={styles.yLabel}>{label}</span>
+                      ))}
+                    </div>
+                  </>
+                )
+              })()}
+            </div>
+            <div className={styles.axisLabels}>
+              <span className={styles.axisLabelLeft}>Current (mA)</span>
+              <span className={styles.axisLabelRight}>Power (W)</span>
             </div>
           </div>
         )}

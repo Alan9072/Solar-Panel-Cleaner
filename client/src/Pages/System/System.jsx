@@ -12,6 +12,7 @@ const CLOUD_CONTROL_URL =
 function System() {
   const [status, setStatus] = useState("OFF");
   const [isPolling, setIsPolling] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const pollingRef = React.useRef(null); // Track active polling
 
   const loadSystemState = async () => {
@@ -105,8 +106,10 @@ function System() {
   };
 
   useEffect(() => {
+    setIsLoading(true);
     loadSystemState().then(state => {
       if (state) setStatus(state);
+      setIsLoading(false);
     });
   }, []);
 
@@ -133,22 +136,26 @@ function System() {
         <div className={styles.infoCard}>
           <FaWifi className={styles.infoIcon} />
           <div className={styles.infoLabel}>Connection</div>
-          <div className={styles.infoValue}>{isPolling ? "Syncing" : "Connected"}</div>
+          <div className={styles.infoValue}>{isLoading ? "Loading..." : isPolling ? "Syncing" : "Connected"}</div>
         </div>
         
         <div className={styles.infoCard}>
           <FaClock className={styles.infoIcon} />
           <div className={styles.infoLabel}>Status</div>
-          <div className={styles.infoValue}>{status}</div>
+          <div className={styles.infoValue}>{isLoading ? "Loading..." : status}</div>
         </div>
       </div>
 
       {/* Power Button */}
       <div
-        className={`${styles.powerBtn} ${isOn ? styles.on : styles.off}`}
-        onClick={toggleSystem}
+        className={`${styles.powerBtn} ${isLoading ? '' : isOn ? styles.on : styles.off}`}
+        onClick={isLoading ? undefined : toggleSystem}
+        style={{ 
+          cursor: isLoading ? 'not-allowed' : 'pointer', 
+          backgroundColor: isLoading ? '#808080' : undefined 
+        }}
       >
-        {isPolling ? (
+        {isLoading || isPolling ? (
           <FaSpinner className={styles.spinner} />
         ) : isOn ? (
           <FaToggleOn className={styles.icon} />
@@ -158,7 +165,12 @@ function System() {
       </div>
 
       <p className={`${styles.status} ${isOn ? styles.onText : styles.offText}`}>
-        {isPolling ? (
+        {isLoading ? (
+          <>
+            <span className={styles.statusMain}>LOADING...</span>
+            <span className={styles.statusSub}>Fetching system status</span>
+          </>
+        ) : isPolling ? (
           <>
             <span className={styles.statusMain}>SYNCHRONIZING...</span>
             <span className={styles.statusSub}>Connecting to ESP Device</span>
