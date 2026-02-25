@@ -129,6 +129,7 @@ app.post("/login", async (req, res) => {
           secure: isProduction, // Secure in production (HTTPS only)
           sameSite: isProduction ? "None" : "Lax", // Helps prevent CSRF attacks
           maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days in milliseconds
+          path: '/', // Make cookie available for all paths
         });
 
         return res.send({ message: "verified" });
@@ -147,7 +148,7 @@ app.post("/login", async (req, res) => {
 app.post("/logout", (req, res) => {
   try {
     // Clear the token cookie
-    res.clearCookie("token");
+    res.clearCookie("token", { path: '/' });
     return res.send({ message: "Logged out successfully" });
   } catch (error) {
     console.error(error);
