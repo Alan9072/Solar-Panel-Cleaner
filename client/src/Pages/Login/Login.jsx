@@ -41,6 +41,7 @@ function Login() {
       const response = await axios.post(`${backendURL}/login`, user,{
         withCredentials: true,
       });
+      console.log("Response from /login API:", response.data.message);
       if(response.data.message !== 'verified'){
           setErrMessage(response.data.message);
         }
