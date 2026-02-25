@@ -42,7 +42,11 @@ function Login() {
         withCredentials: true,
       });
       console.log("Response from /login API:", response.data.message);
+      console.log("Full response data:", response.data);
+      console.log("Is verified?", response.data.message === 'verified');
+      
       if(response.data.message !== 'verified'){
+          console.log("Not verified, showing error");
           setErrMessage(response.data.message);
         }
         else{
