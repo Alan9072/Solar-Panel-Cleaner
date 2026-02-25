@@ -50,7 +50,7 @@ function Login() {
         }
 
     } catch (error) {
-      setErrMessage("Error logging in. Try again later.");
+      setErrMessage(error);
     } finally {
       setLoading(false);
     }
