@@ -36,79 +36,79 @@ function Login() {
 
     setLoading(true);
     setTimeout(async () => {
-    try {
-      console.log("Sending user data:", user);
-      const response = await axios.post(`${backendURL}/login`, user,{
-        withCredentials: true,
-      });
-      console.log("Response from /login API:", response.data.message);
-      if(response.data.message !== 'verified'){
+      try {
+        console.log("Sending user data:", user);
+        const response = await axios.post(`${backendURL}/login`, user, {
+          withCredentials: true,
+        });
+        console.log("Response from /login API:", response.data.message);
+        if (response.data.message !== "verified") {
           setErrMessage(response.data.message);
-        }
-        else{
+        } else {
           setUser({ username: "", password: "" });
-          navigate('/');
+          setTimeout(() => {
+            navigate("/", { replace: true });
+          }, 100);
         }
-
-    } catch (error) {
-      setErrMessage("Error logging in. Try again later.");
-    } finally {
-      setLoading(false);
-    }
-  }, 2000);
+      } catch (error) {
+        setErrMessage("Error logging in. Try again later.");
+      } finally {
+        setLoading(false);
+      }
+    }, 2000);
   };
-  
+
   const handleChange = (e) => {
     setUser({ ...user, [e.target.name]: e.target.value });
   };
 
   return (
     <div className={styles.container}>
-    <div className={styles.registerBox}>
-      <h1>Login to Account</h1>
-      <p>Welcome back! Let’s get you in.</p>
-      <form onSubmit={handleSubmit}>
-        <div className={styles.inputdiv}>
-          <input
-            type="text"
-            name="username"
-            placeholder="Username"
-            value={user.username}
-            onChange={handleChange}
-          />
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            value={user.password}
-            onChange={handleChange}
-          />
-        </div>
-        <div className={styles.errDiv}>
-          {errmessage && (
-            <p className={styles.errMessage}>
-              <MdError />
-              {errmessage}
-            </p>
+      <div className={styles.registerBox}>
+        <h1>Login to Account</h1>
+        <p>Welcome back! Let’s get you in.</p>
+        <form onSubmit={handleSubmit}>
+          <div className={styles.inputdiv}>
+            <input
+              type="text"
+              name="username"
+              placeholder="Username"
+              value={user.username}
+              onChange={handleChange}
+            />
+            <input
+              type="password"
+              name="password"
+              placeholder="Password"
+              value={user.password}
+              onChange={handleChange}
+            />
+          </div>
+          <div className={styles.errDiv}>
+            {errmessage && (
+              <p className={styles.errMessage}>
+                <MdError />
+                {errmessage}
+              </p>
+            )}
+          </div>
+
+          {loading ? (
+            <div className={styles.loading}>Loading...</div>
+          ) : (
+            <button className={styles.submit} type="submit">
+              Login
+            </button>
           )}
+        </form>
+
+        <div className={styles.alreadyAcc}>
+          <p>Dont have an Account?</p>
+          <Link className={styles.loginRedirect} to="/register">
+            <p>Register</p>
+          </Link>
         </div>
-
-        {loading ? (
-          <div className={styles.loading}>Loading...</div>
-        ) : (
-          <button className={styles.submit} type="submit">
-            Login
-          </button>
-        )}
-      </form>
-
-      <div className={styles.alreadyAcc}>
-        <p>Dont have an Account?</p>
-        <Link className={styles.loginRedirect} to="/register">
-          <p>Register</p>
-        </Link>
       </div>
-    </div>
     </div>
   );
 }
