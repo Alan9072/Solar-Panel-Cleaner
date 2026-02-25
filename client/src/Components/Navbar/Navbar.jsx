@@ -17,7 +17,8 @@ function Navbar() {
   const handleLogout = async () => {
     try {
       // Call backend logout endpoint to clear cookie
-      await fetch('http://localhost:3000/logout', {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+      await fetch(`${API_BASE_URL}/logout`, {
         method: 'POST',
         credentials: 'include',
         headers: {

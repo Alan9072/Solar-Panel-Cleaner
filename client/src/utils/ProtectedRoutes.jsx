@@ -19,7 +19,8 @@ function ProtectedRoutes() {
 
             try {
                 // Verify token with backend
-                const response = await fetch('http://localhost:3000/verify', {
+                const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+                const response = await fetch(`${API_BASE_URL}/verify`, {
                     method: 'GET',
                     credentials: 'include', // Include cookies in the request
                     headers: {

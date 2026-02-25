@@ -3,6 +3,8 @@ import Navbar from '../../Components/Navbar/Navbar'
 import styles from './Status.module.css'
 import Header from '../../Components/Header/Header'
 
+const TELEMETRY_API_URL = import.meta.env.VITE_TELEMETRY_API_URL || 'https://ri97neft0k.execute-api.ap-south-1.amazonaws.com/telemetry';
+
 function Status() {
   const [telemetryData, setTelemetryData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -22,11 +24,11 @@ function Status() {
       const startTime = Date.now()
       
       // Fetch current telemetry data
-      const response = await fetch('https://ri97neft0k.execute-api.ap-south-1.amazonaws.com/telemetry')
+      const response = await fetch(TELEMETRY_API_URL)
       const result = await response.json()
       
       // Fetch historical data for chart (last 10 records)
-      const historyResponse = await fetch('https://ri97neft0k.execute-api.ap-south-1.amazonaws.com/telemetry?limit=10')
+      const historyResponse = await fetch(`${TELEMETRY_API_URL}?limit=10`)
       const historyResult = await historyResponse.json()
       
       if (result.success) {

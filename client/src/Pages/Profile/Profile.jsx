@@ -17,7 +17,7 @@ import {
   FaEdit
 } from "react-icons/fa";
 
-const backendURL = "http://localhost:3000";
+const backendURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 function Profile() {
   const [user, setUser] = useState(null);
