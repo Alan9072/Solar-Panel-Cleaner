@@ -30,12 +30,12 @@ function Navbar() {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       
-      // Redirect to login page
-      navigate('/login');
+      // Use window.location for full page reload
+      window.location.href = '/login';
     } catch (error) {
       console.error('Logout error:', error);
       // Still redirect to login even if there's an error
-      navigate('/login');
+      window.location.href = '/login';
     }
   };
 

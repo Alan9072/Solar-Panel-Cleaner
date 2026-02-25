@@ -158,8 +158,13 @@ app.post("/login", async (req, res) => {
 
 app.post("/logout", (req, res) => {
   try {
-    // Clear the token cookie
-    res.clearCookie("token", { path: '/' });
+    // Clear the token cookie with same attributes as when it was set
+    res.clearCookie("token", {
+      httpOnly: isProduction,
+      secure: isProduction,
+      sameSite: isProduction ? "None" : "Lax",
+      path: '/'
+    });
     return res.send({ message: "Logged out successfully" });
   } catch (error) {
     console.error(error);

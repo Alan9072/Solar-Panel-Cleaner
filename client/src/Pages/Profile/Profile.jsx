@@ -45,9 +45,14 @@ function Profile() {
   const handleLogout = async () => {
     try {
       await axios.post(`${backendURL}/logout`, {}, { withCredentials: true });
-      navigate("/login");
+      // Clear localStorage
+      localStorage.clear();
+      // Use window.location for full page reload
+      window.location.href = '/login';
     } catch (err) {
       console.error("Logout failed:", err);
+      // Still redirect even on error
+      window.location.href = '/login';
     }
   };
 
