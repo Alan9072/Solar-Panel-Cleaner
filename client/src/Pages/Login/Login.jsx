@@ -5,7 +5,7 @@ import { MdError } from "react-icons/md";
 import axios from "axios";
 import Cookies from "js-cookie";
 
-const backendURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+const backendURL = import.meta.env.VITE_API_BASE_URL ;
 
 function Login() {
   const navigate = useNavigate();
