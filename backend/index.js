@@ -123,6 +123,15 @@ app.post("/login", async (req, res) => {
       const isMatch = await bcrypt.compare(password, existingUser.password);
       if (isMatch) {
         var token = jwt.sign({ username: username }, process.env.SECRET);
+        
+        console.log("Setting cookie with token:", token);
+        console.log("isProduction:", isProduction);
+        console.log("Cookie options:", {
+          httpOnly: isProduction,
+          secure: isProduction,
+          sameSite: isProduction ? "None" : "Lax",
+          path: '/'
+        });
 
         res.cookie("token", token, {
           httpOnly: isProduction, // Prevents client-side access
@@ -131,6 +140,8 @@ app.post("/login", async (req, res) => {
           maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days in milliseconds
           path: '/', // Make cookie available for all paths
         });
+        
+        console.log("Cookie set successfully");
 
         return res.send({ message: "verified" });
       } else {
