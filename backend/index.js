@@ -9,7 +9,7 @@ import user from './Models/User.js';
 import SystemState from './Models/SystemState.js';
 
 const corsOptions = {
-  origin: 'http://localhost:5173',  // Your frontend URL
+  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',  // Your frontend URL
   credentials: true  // Allow cookies to be sent
 };
 
