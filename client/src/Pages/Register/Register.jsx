@@ -3,18 +3,36 @@ import styles from "./Register.module.css";
 import { Link, useNavigate } from "react-router-dom";
 import { MdError } from "react-icons/md";
 import axios from "axios";
-import Cookies from "js-cookie";
 
 const backendURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 function Register() {
   const navigate = useNavigate();
 
+  // Check if user is already logged in
   useEffect(() => {
-    const token = Cookies.get("token");
-    if (token) {
-      navigate("/");
-    }
+    const checkAuth = async () => {
+      try {
+        const response = await fetch(`${backendURL}/verify`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        const data = await response.json();
+        
+        if (data.verified) {
+          // User is already logged in, redirect to home
+          navigate('/', { replace: true });
+        }
+      } catch (error) {
+        // If verification fails, user can stay on register page
+        console.log('Not authenticated');
+      }
+    };
+    
+    checkAuth();
   }, [navigate]);
 
   const [errmessage, setErrMessage] = useState("");

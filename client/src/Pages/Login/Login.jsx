@@ -9,9 +9,6 @@ const backendURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 function Login() {
   const navigate = useNavigate();
 
-  // Removed cookie check since httpOnly cookies can't be read by JavaScript
-  // The backend will handle verification when navigating to protected routes
-
   const [errmessage, setErrMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -19,6 +16,32 @@ function Login() {
     username: "",
     password: "",
   });
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch(`${backendURL}/verify`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        const data = await response.json();
+        
+        if (data.verified) {
+          // User is already logged in, redirect to home
+          navigate('/', { replace: true });
+        }
+      } catch (error) {
+        // If verification fails, user can stay on login page
+        console.log('Not authenticated');
+      }
+    };
+    
+    checkAuth();
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
