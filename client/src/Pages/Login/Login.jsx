@@ -45,10 +45,8 @@ function Login() {
         if (response.data.message !== "verified") {
           setErrMessage(response.data.message);
         } else {
-          setUser({ username: "", password: "" });
-          setTimeout(() => {
-            navigate("/", { replace: true });
-          }, 100);
+          // Force full page reload to ensure cookie is available
+          window.location.href = '/';
         }
       } catch (error) {
         setErrMessage("Error logging in. Try again later.");
