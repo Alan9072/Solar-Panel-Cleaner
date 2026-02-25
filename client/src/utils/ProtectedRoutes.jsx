@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import Cookies from 'js-cookie';
 
 function ProtectedRoutes() {
     console.log('ProtectedRoutes component mounted');
@@ -10,17 +9,13 @@ function ProtectedRoutes() {
 
     useEffect(() => {
         const verifyToken = async () => {
-            const token = Cookies.get('token'); // Get the token from cookies
-            console.log('Token from cookies:', token);
-            if (!token) {
-                navigate('/login'); // Redirect to the login page if no token
-                setLoading(false);
-                return;
-            }
-
+            // Don't check cookie with js-cookie since it's httpOnly
+            // Just try to verify with the backend - cookie will be sent automatically
+            
             try {
                 // Verify token with backend
                 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+                console.log('Verifying token with backend...');
                 const response = await fetch(`${API_BASE_URL}/verify`, {
                     method: 'GET',
                     credentials: 'include', // Include cookies in the request
@@ -30,19 +25,19 @@ function ProtectedRoutes() {
                 });
 
                 const data = await response.json();
+                console.log('Verification response:', data);
 
                 if (data.verified) {
                     console.log('Token is valid');
                     setUser(data.username); // Set the username if token is valid
                 } else {
-                    // Token is invalid, clear cookie and redirect to login
-                    Cookies.remove('token');
+                    // Token is invalid, redirect to login
+                    console.log('Token is invalid');
                     navigate('/login');
                 }
             } catch (error) {
                 console.error('Token verification error:', error);
                 // On error, redirect to login
-                Cookies.remove('token');
                 navigate('/login');
             } finally {
                 setLoading(false);

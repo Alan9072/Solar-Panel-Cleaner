@@ -3,19 +3,14 @@ import styles from "./Login.module.css";
 import { Link, useNavigate } from "react-router-dom";
 import { MdError } from "react-icons/md";
 import axios from "axios";
-import Cookies from "js-cookie";
 
 const backendURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 function Login() {
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const token = Cookies.get("token");
-    if (token) {
-      navigate("/");
-    }
-  }, [navigate]);
+  // Removed cookie check since httpOnly cookies can't be read by JavaScript
+  // The backend will handle verification when navigating to protected routes
 
   const [errmessage, setErrMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -50,10 +45,8 @@ function Login() {
           setErrMessage(response.data.message);
         }
         else{
-          console.log("Login successful, checking cookie...");
-          const cookieCheck = Cookies.get("token");
-          console.log("Cookie after login:", cookieCheck);
-          console.log("Navigating to /");
+          console.log("Login successful, navigating to /");
+          // Cookie is httpOnly and set by server, can't read it with js-cookie
           // Use window.location for full page reload
           window.location.href = '/';
         }
