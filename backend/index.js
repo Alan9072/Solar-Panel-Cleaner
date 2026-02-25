@@ -118,6 +118,7 @@ app.post("/login", async (req, res) => {
   
   try {
     const existingUser = await user.findOne({ username });
+    console.log("User found in DB:", existingUser);
     if (existingUser) {
       // Compare the provided password with the hashed password
       const isMatch = await bcrypt.compare(password, existingUser.password);
