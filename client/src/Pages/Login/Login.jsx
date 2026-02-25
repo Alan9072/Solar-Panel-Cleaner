@@ -50,7 +50,7 @@ function Login() {
         }
 
     } catch (error) {
-      setErrMessage(error);
+      setErrMessage(error.response?.data?.message || "Login failed. Please try again.");
     } finally {
       setLoading(false);
     }
