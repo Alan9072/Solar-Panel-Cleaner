@@ -3,6 +3,7 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
 
 function ProtectedRoutes() {
+    console.log('ProtectedRoutes component mounted');
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);

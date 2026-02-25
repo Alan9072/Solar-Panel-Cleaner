@@ -46,8 +46,12 @@ function Login() {
           setErrMessage(response.data.message);
         }
         else{
-          setUser({ username: "", password: "" });
-          navigate('/');
+          console.log("Login successful, checking cookie...");
+          const cookieCheck = Cookies.get("token");
+          console.log("Cookie after login:", cookieCheck);
+          console.log("Navigating to /");
+          // Use window.location for full page reload
+          window.location.href = '/';
         }
 
     } catch (error) {
