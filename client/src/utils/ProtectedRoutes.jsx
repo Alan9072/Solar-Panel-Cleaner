@@ -10,7 +10,7 @@ function ProtectedRoutes() {
     useEffect(() => {
         const verifyToken = async () => {
             const token = Cookies.get('token'); // Get the token from cookies
-
+            console.log('Token from cookies:', token);
             if (!token) {
                 navigate('/login'); // Redirect to the login page if no token
                 setLoading(false);
