@@ -56,6 +56,80 @@
     100% { background-position: -200% 0; }
 }
 
+/* Skeleton Loaders */
+.skeletonBox {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmerBox 1.5s infinite;
+    border-radius: 8px;
+}
+
+@keyframes shimmerBox {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.skeletonTitle {
+    width: 200px;
+    height: 28px;
+    margin: 0 auto 8px;
+}
+
+.skeletonText {
+    width: 180px;
+    height: 16px;
+    margin: 0 auto;
+}
+
+.skeletonIcon {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 8px;
+    border-radius: 50%;
+}
+
+.skeletonLabel {
+    width: 80px;
+    height: 12px;
+    margin: 0 auto 8px;
+}
+
+.skeletonValue {
+    width: 100px;
+    height: 24px;
+    margin: 0 auto;
+}
+
+.skeletonImage {
+    width: 100%;
+    height: 230px;
+    border-radius: 16px;
+}
+
+.skeletonDot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.skeletonButton {
+    width: 100px;
+    height: 40px;
+    border-radius: 12px;
+}
+
+.skeletonChartTitle {
+    width: 250px;
+    height: 28px;
+    margin: 0 auto 24px;
+}
+
+.skeletonChart {
+    width: 100%;
+    height: 250px;
+    border-radius: 12px;
+}
+
 .updating {
     animation: cardPulse 1s ease-in-out infinite;
 }
@@ -82,7 +156,7 @@
     border-radius: 20px;
     padding: 1.5rem 1rem;
     max-width: 600px;
-    margin: 0 auto;
+    margin: 0 auto 1rem;
     backdrop-filter: blur(10px);
 }
 
@@ -628,7 +702,7 @@
     border-radius: 16px;
     padding: 1.5rem 1rem;
     max-width: 1000px;
-    margin: 1.5rem auto 0;
+    margin: 0 auto 0;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
@@ -854,4 +928,137 @@
     .valueCard {
         min-width: 130px;
     }
+}
+/* Image Section Styles */
+.imageSection {
+    background-color: #ffffff;
+    border-radius: 20px;
+    overflow: hidden;
+    max-width: 650px;
+    margin: 0 auto 1rem;
+}
+
+.imageContainer {
+  background-color: #fff;
+  padding: 20px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 270px;
+  border-radius: 16px;
+}
+
+.loadingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.421);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  z-index: 10;
+}
+
+.loadingText {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.errorContainer {
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  color: #c62828;
+  text-align: center;
+}
+
+.errorTitle {
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.errorMessage {
+  font-size: 14px;
+}
+
+.panelImage {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+.panelImageHidden {
+  display: none;
+}
+
+.live{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background-color: #fff;
+}
+
+.liveStatus {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.liveStatus p {
+    margin: 0;
+    font-weight: 500;
+    color: #333;
+}
+
+.liveDot {
+    width: 10px;
+    height: 10px;
+    background-color: #4CAF50;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 8px rgba(76, 175, 80, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+    }
+}
+
+.refreshButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.3s;
+}
+
+.refreshButton:hover {
+    background-color: #45a049;
+}
+
+.refreshButton svg {
+    width: 12px;
+    height: 12px;
 }

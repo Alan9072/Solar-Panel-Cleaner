@@ -8,6 +8,7 @@ import { IoIosAdd } from "react-icons/io";
 import { TbLayoutDashboardFilled } from "react-icons/tb";
 import { FaCogs } from "react-icons/fa";
 import { IoAnalytics } from "react-icons/io5";
+import { IoNotifications } from "react-icons/io5";
 
 
 function Navbar() {
@@ -52,7 +53,7 @@ function Navbar() {
         to="/status"
         className={`${style.navItem} ${location.pathname === "/status" ? style.active : ""}`}
       >
-        <IoAnalytics className={style.reactIcons} />
+        <IoNotifications className={style.reactIcons} />
       </Link>
 
       <Link

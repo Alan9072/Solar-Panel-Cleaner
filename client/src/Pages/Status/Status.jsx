@@ -12,6 +12,31 @@ function Status() {
   const [error, setError] = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
   const [chartData, setChartData] = useState([]);
+  
+  // Image viewer states
+  const [timestamp, setTimestamp] = useState(Date.now());
+  const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
+  
+  const baseImageUrl = 'https://esp32-solarimg.s3.ap-south-1.amazonaws.com/current-panel.jpg';
+  const imageUrl = `${baseImageUrl}?t=${timestamp}`;
+
+  // Image handling functions
+  const handleImageLoad = () => {
+    setImageLoading(false);
+    setImageError(false);
+  };
+
+  const handleImageError = () => {
+    setImageLoading(false);
+    setImageError(true);
+  };
+
+  const handleRefreshImage = () => {
+    setTimestamp(Date.now());
+    setImageError(false);
+    setImageLoading(true);
+  };
 
   const fetchTelemetry = async (isAutoRefresh = false) => {
     try {
@@ -88,6 +113,16 @@ function Status() {
     return () => clearInterval(interval)
   }, [])
 
+  // Auto-refresh image every 5 seconds
+  useEffect(() => {
+    const imageInterval = setInterval(() => {
+      setTimestamp(Date.now());
+      setImageLoading(true);
+    }, 5000);
+    
+    return () => clearInterval(imageInterval);
+  }, []);
+
   return (
     <div>
       <Header />
@@ -96,7 +131,44 @@ function Status() {
         <h1 className={styles.title}>Device Telemetry Status</h1>
         
         {loading && !telemetryData && (
-          <div className={styles.loading}>Loading telemetry data...</div>
+          <>
+            {/* Telemetry Card Skeleton */}
+            <div className={styles.telemetryCard}>
+              <div className={styles.deviceInfo}>
+                <div className={`${styles.skeletonBox} ${styles.skeletonTitle}`}></div>
+                <div className={`${styles.skeletonBox} ${styles.skeletonText}`}></div>
+              </div>
+              <div className={styles.metricsGrid}>
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className={styles.metricCard}>
+                    <div className={`${styles.skeletonBox} ${styles.skeletonIcon}`}></div>
+                    <div className={`${styles.skeletonBox} ${styles.skeletonLabel}`}></div>
+                    <div className={`${styles.skeletonBox} ${styles.skeletonValue}`}></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Image Section Skeleton */}
+            <div className={styles.imageSection}>
+              <div className={styles.imageContainer}>
+                <div className={`${styles.skeletonBox} ${styles.skeletonImage}`}></div>
+              </div>
+              <div className={styles.live}>
+                <div className={styles.liveStatus}>
+                  <div className={`${styles.skeletonBox} ${styles.skeletonDot}`}></div>
+                  <div className={`${styles.skeletonBox} ${styles.skeletonText}`}></div>
+                </div>
+                <div className={`${styles.skeletonBox} ${styles.skeletonButton}`}></div>
+              </div>
+            </div>
+
+            {/* Chart Section Skeleton */}
+            <div className={styles.chartSection}>
+              <div className={`${styles.skeletonBox} ${styles.skeletonChartTitle}`}></div>
+              <div className={`${styles.skeletonBox} ${styles.skeletonChart}`}></div>
+            </div>
+          </>
         )}
         
         {error && (
@@ -164,6 +236,50 @@ function Status() {
             </div>
           </div>
         )}
+
+        {/* Live Camera Feed Section */}
+        <div className={styles.imageSection}>
+          <div className={styles.imageContainer}>
+            {imageLoading && !imageError && (
+              <div className={styles.loadingOverlay}>
+                <div className={styles.loadingText}>
+                  Updating...
+                </div>
+              </div>
+            )}
+
+            {imageError && (
+              <div className={styles.errorContainer}>
+                <p className={styles.errorTitle}>
+                  Failed to load image
+                </p>
+                <p className={styles.errorMessage}>
+                  Please check your connection or refresh the page
+                </p>
+              </div>
+            )}
+
+            <img 
+              src={imageUrl} 
+              alt="Current Solar Panel"
+              onLoad={handleImageLoad}
+              onError={handleImageError}
+              className={`${styles.panelImage} ${imageError ? styles.panelImageHidden : ''}`}
+            />
+          </div>
+          <div className={styles.live}>
+            <div className={styles.liveStatus}>
+              <span className={styles.liveDot}></span>
+              <p>Live Camera Feed</p>
+            </div>
+            <button onClick={handleRefreshImage} className={styles.refreshButton}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+              </svg>
+              Refresh
+            </button>
+          </div>
+        </div>
 
         {/* Chart Section */}
         {telemetryData && chartData.length > 0 && (
