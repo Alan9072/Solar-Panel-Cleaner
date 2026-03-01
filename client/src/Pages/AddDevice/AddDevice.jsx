@@ -10,10 +10,13 @@ function AddDevice() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [clearing, setClearing] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
 
   const fetchNotifications = async () => {
     try {
-      setLoading(true);
+      if (initialLoad) {
+        setLoading(true);
+      }
       const response = await fetch(NOTIFICATIONS_API_URL);
       const result = await response.json();
       
@@ -62,7 +65,10 @@ function AddDevice() {
       setError('Error connecting to the server');
       console.error('Notifications fetch error:', err);
     } finally {
-      setLoading(false);
+      if (initialLoad) {
+        setLoading(false);
+        setInitialLoad(false);
+      }
     }
   };
   
@@ -81,34 +87,30 @@ function AddDevice() {
   };
 
   const clearAllNotifications = async () => {
-    if (!window.confirm('Are you sure you want to clear all notifications?')) {
-      return;
-    }
-    
     try {
       setClearing(true);
+      setError(null);
       
-      // Try GET method (some APIs use GET for simple operations)
-      console.log('Trying GET request to:', NOTIFICATIONS_API_URL);
-      const response = await fetch(NOTIFICATIONS_API_URL);
+      // Try DELETE request to delete
+      const response = await fetch(NOTIFICATIONS_API_URL, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
       
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
-      
-      // Clear locally and refetch
-      if (response.ok || response.status === 200) {
-        console.log('Request successful, clearing locally and refetching...');
+      if (response.ok) {
+        console.log('Delete successful');
         setNotifications([]);
-        setTimeout(() => {
-          fetchNotifications();
-        }, 1000);
+        // Refetch after delay to confirm deletion
+        setTimeout(() => fetchNotifications(), 1500);
       } else {
-        console.error('Clear failed with status:', response.status);
-        setError('Failed to clear notifications. Status: ' + response.status);
+        console.error('Delete failed with status:', response.status);
+        setError('Failed to clear notifications');
       }
     } catch (err) {
       console.error('Clear notifications error:', err);
-      setError('Cannot clear - CORS issue. Ask your friend to enable CORS for POST/DELETE methods on the API.');
+      setError('❌ CORS Blocked! Your friend needs to enable CORS for DELETE method on AWS API Gateway deletedb endpoint');
     } finally {
       setClearing(false);
     }
@@ -116,8 +118,8 @@ function AddDevice() {
 
   useEffect(() => {
     fetchNotifications();
-    // Refresh notifications every 30 seconds
-    const interval = setInterval(fetchNotifications, 30000);
+    // Refresh notifications every 5 seconds
+    const interval = setInterval(fetchNotifications, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -126,8 +128,9 @@ function AddDevice() {
       case 'success':
         return (
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
           </svg>
         );
       case 'warning':
@@ -156,15 +159,9 @@ function AddDevice() {
       <Header/>
       <div className={styles.container}>
         <div className={styles.headerActions}>
-          {loading && notifications.length === 0 ? (
-            <div className={styles.skeletonNotificationCount}>
-              <div className={styles.skeletonCountText}></div>
-            </div>
-          ) : (
-            <div className={styles.notificationCount}>
-              {notifications.length} {notifications.length === 1 ? 'Notification' : 'Notifications'}
-            </div>
-          )}
+          <div className={styles.notificationCount}>
+            {notifications.length} {notifications.length === 1 ? 'Notification' : 'Notifications'}
+          </div>
           
           <button 
             onClick={clearAllNotifications} 
@@ -175,7 +172,7 @@ function AddDevice() {
           </button>
         </div>
         
-        {loading && notifications.length === 0 ? (
+        {loading && initialLoad ? (
           <div className={styles.notificationsList}>
             {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
               <div key={i} className={styles.skeletonCard}>

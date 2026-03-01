@@ -99,7 +99,6 @@
     display: flex;
     align-items: flex-start;
     gap: 0.75rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     border: 1.5px solid rgba(106, 123, 254, 0.2);
     transition: all 0.3s ease;
     position: relative;
@@ -109,7 +108,6 @@
 
 .notificationCard:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
     border-color: rgba(106, 123, 254, 0.4);
 }
 
@@ -134,8 +132,8 @@
 }
 
 .success .notificationIcon {
-    background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
-    color: #16a34a;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #d97706;
 }
 
 .warning .notificationIcon {
