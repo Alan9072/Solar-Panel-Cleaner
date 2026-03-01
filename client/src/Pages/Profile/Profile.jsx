@@ -151,7 +151,7 @@ function Profile() {
                     <FaEdit />
                     <span>Change Password</span>
                   </button>
-                  <button className={style.actionBtn}>
+                  <button className={style.actionBtn} onClick={() => navigate('/status')}>
                     <FaBell />
                     <span>Notifications</span>
                   </button>
@@ -159,7 +159,7 @@ function Profile() {
                     <FaCog />
                     <span>Preferences</span>
                   </button>
-                  <button className={style.actionBtn}>
+                  <button className={style.actionBtn} onClick={() => navigate('/history')}>
                     <FaHistory />
                     <span>History</span>
                   </button>
