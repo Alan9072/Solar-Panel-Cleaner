@@ -60,13 +60,14 @@ function Profile() {
     <>
       <Navbar />
       <div className={style.profileContainer}>
+        <Header />
         {loading ? (
           <div className={style.loading}>
             <p>Loading user info...</p>
           </div>
         ) : user ? (
           <>
-            <Header />
+            
             <div className={style.profileContent}>
               
               {/* Profile Header */}
