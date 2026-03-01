@@ -239,6 +239,50 @@ app.get("/api/user/me", async (req, res) => {
   }
 });
 
+// Change password endpoint
+app.post("/api/user/change-password", async (req, res) => {
+  try {
+    const token = req.cookies.token;
+    const { newPassword } = req.body;
+
+    // Check if token exists
+    if (!token) {
+      return res.status(401).send({ message: "Not authenticated" });
+    }
+
+    // Verify JWT
+    jwt.verify(token, process.env.SECRET, async (err, decoded) => {
+      if (err) {
+        return res.status(401).send({ message: "Invalid or expired token" });
+      }
+
+      try {
+        // Find user
+        const existingUser = await user.findOne({ username: decoded.username });
+        if (!existingUser) {
+          return res.status(404).send({ message: "User not found" });
+        }
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        // Update password
+        existingUser.password = hashedPassword;
+        await existingUser.save();
+
+        return res.send({ message: "Password changed successfully" });
+      } catch (error) {
+        console.error("Password change error:", error);
+        return res.status(500).send({ message: "Failed to change password" });
+      }
+    });
+  } catch (error) {
+    console.error("Server error:", error);
+    res.status(500).send({ message: "Server error. Please try again later." });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);

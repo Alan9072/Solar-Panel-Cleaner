@@ -14,7 +14,8 @@ import {
   FaHistory,
   FaMicrochip,
   FaSignOutAlt,
-  FaEdit
+  FaEdit,
+  FaTimes
 } from "react-icons/fa";
 
 const backendURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
@@ -22,6 +23,13 @@ const backendURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 function Profile() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -56,6 +64,58 @@ function Profile() {
     }
   };
 
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess('');
+
+    // Validate passwords
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      setPasswordError('New password must be at least 6 characters');
+      return;
+    }
+
+    try {
+      await axios.post(
+        `${backendURL}/api/user/change-password`,
+        {
+          newPassword: passwordData.newPassword
+        },
+        { withCredentials: true }
+      );
+      
+      setPasswordSuccess('Password changed successfully!');
+      setPasswordData({ newPassword: '', confirmPassword: '' });
+      
+      // Close modal after 2 seconds
+      setTimeout(() => {
+        setShowPasswordModal(false);
+        setPasswordSuccess('');
+      }, 2000);
+    } catch (err) {
+      setPasswordError(err.response?.data?.message || 'Failed to change password');
+    }
+  };
+
+  const openPasswordModal = () => {
+    setShowPasswordModal(true);
+    setPasswordError('');
+    setPasswordSuccess('');
+    setPasswordData({ newPassword: '', confirmPassword: '' });
+  };
+
+  const closePasswordModal = () => {
+    setShowPasswordModal(false);
+    setPasswordError('');
+    setPasswordSuccess('');
+    setPasswordData({ newPassword: '', confirmPassword: '' });
+  };
+
   return (
     <>
       <Navbar />
@@ -87,9 +147,9 @@ function Profile() {
               <div className={style.section}>
                 <h3 className={style.sectionTitle}>Account Settings</h3>
                 <div className={style.actionGrid}>
-                  <button className={style.actionBtn}>
-                    <FaShieldAlt />
-                    <span>Security</span>
+                  <button className={style.actionBtn} onClick={openPasswordModal}>
+                    <FaEdit />
+                    <span>Change Password</span>
                   </button>
                   <button className={style.actionBtn}>
                     <FaBell />
@@ -111,6 +171,62 @@ function Profile() {
                 <FaSignOutAlt /> Logout
               </button>
             </div>
+
+            {/* Change Password Modal */}
+            {showPasswordModal && (
+              <div className={style.modalOverlay} onClick={closePasswordModal}>
+                <div className={style.modalContent} onClick={(e) => e.stopPropagation()}>
+                  <div className={style.modalHeader}>
+                    <h2>Change Password</h2>
+                    <button className={style.closeBtn} onClick={closePasswordModal}>
+                      <FaTimes />
+                    </button>
+                  </div>
+                  
+                  <form onSubmit={handlePasswordChange} className={style.passwordForm}>
+                    <div className={style.messageContainer}>
+                      {passwordError && (
+                        <div className={style.errorMessage}>{passwordError}</div>
+                      )}
+                      {passwordSuccess && (
+                        <div className={style.successMessage}>{passwordSuccess}</div>
+                      )}
+                    </div>
+                    
+                    <div className={style.formGroup}>
+                      <label>New Password</label>
+                      <input
+                        type="password"
+                        value={passwordData.newPassword}
+                        onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                        required
+                        placeholder="Enter new password"
+                      />
+                    </div>
+
+                    <div className={style.formGroup}>
+                      <label>Confirm New Password</label>
+                      <input
+                        type="password"
+                        value={passwordData.confirmPassword}
+                        onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                        required
+                        placeholder="Confirm new password"
+                      />
+                    </div>
+
+                    <div className={style.modalButtons}>
+                      <button type="button" className={style.cancelBtn} onClick={closePasswordModal}>
+                        Cancel
+                      </button>
+                      <button type="submit" className={style.submitBtn}>
+                        Change Password
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <p>User data not found</p>
