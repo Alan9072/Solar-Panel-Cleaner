@@ -5,7 +5,7 @@ import Register from "./Pages/Register/Register.jsx";
 import ProtectedRoutes from "./utils/ProtectedRoutes.jsx";
 import Home from "./Pages/Home/Home.jsx";
 import Status from "./Pages/Status/Status.jsx";
-import AddDevice from "./Pages/AddDevice/AddDevice.jsx"; // New Add Device page
+import Notification from "./Pages/Notification/Notification.jsx"; // Notification page
 import Profile from "./Pages/Profile/Profile.jsx"; // Profile page
 import History from "./Pages/History/History.jsx"; // History page
 import System from "./Pages/System/System.jsx"; // LED Control page
@@ -21,7 +21,7 @@ function App() {
         {/* Protected Routes */}
         <Route element={<ProtectedRoutes />}>
           <Route path="/" element={<Status/>} />
-          <Route path="/status" element={<AddDevice />} />
+          <Route path="/status" element={<Notification />} />
           <Route path="/system" element={<System />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
