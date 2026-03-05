@@ -1006,22 +1006,22 @@
 }
 
 .topLeft {
-  top: 24px;
+  top: 30px;
   left: 20px;
 }
 
 .topRight {
-  top: 24px;
+  top: 30px;
   right: 20px;
 }
 
 .bottomLeft {
-  bottom: 24px;
+  bottom: 30px;
   left: 20px;
 }
 
 .bottomRight {
-  bottom: 24px;
+  bottom: 30px;
   right: 20px;
 }
 
