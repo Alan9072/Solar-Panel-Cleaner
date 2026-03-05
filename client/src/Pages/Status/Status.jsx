@@ -315,15 +315,6 @@ function Status() {
                 </div>
               </div>
 
-              <div className={styles.summaryCard}>
-                <div className={styles.summaryIcon}>🧹</div>
-                <div className={styles.summaryContent}>
-                  <h3 className={styles.summaryLabel}>Cleanliness</h3>
-                  <p className={styles.summaryValue}>
-                    {100 - ([inspectionResult.lu, inspectionResult.ru, inspectionResult.ld, inspectionResult.rd].filter(Boolean).length * 25)}%
-                  </p>
-                </div>
-              </div>
             </div>
 
             <div className={styles.detailsGrid}>
