@@ -941,7 +941,7 @@
 
 .imageContainer {
   background-color: #fff;
-  padding: 20px;
+  padding: 15px;
   position: relative;
   display: flex;
   align-items: center;
@@ -1006,23 +1006,23 @@
 }
 
 .topLeft {
-  top: 25px;
-  left: 25px;
+  top: 16px;
+  left: 18px;
 }
 
 .topRight {
-  top: 25px;
-  right: 25px;
+  top: 16px;
+  right: 18px;
 }
 
 .bottomLeft {
-  bottom: 25px;
-  left: 25px;
+  bottom: 18px;
+  left: 18px;
 }
 
 .bottomRight {
-  bottom: 25px;
-  right: 25px;
+  bottom: 18px;
+  right: 18px;
 }
 
 .loadingOverlay {
