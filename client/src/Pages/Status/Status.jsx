@@ -4,6 +4,7 @@ import styles from './Status.module.css'
 import Header from '../../Components/Header/Header'
 
 const TELEMETRY_API_URL = import.meta.env.VITE_TELEMETRY_API_URL || 'https://ri97neft0k.execute-api.ap-south-1.amazonaws.com/telemetry';
+const INSPECTION_API_URL = 'https://esp32-solarimg.s3.ap-south-1.amazonaws.com/inspection-result.json';
 
 function Status() {
   const [telemetryData, setTelemetryData] = useState(null)
@@ -11,7 +12,7 @@ function Status() {
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
-  const [chartData, setChartData] = useState([]);
+  const [inspectionResult, setInspectionResult] = useState(null)
   
   // Image viewer states
   const [timestamp, setTimestamp] = useState(Date.now());
@@ -36,6 +37,17 @@ function Status() {
     setTimestamp(Date.now());
     setImageError(false);
     setImageLoading(true);
+    fetchInspectionResult();
+  };
+
+  const fetchInspectionResult = async () => {
+    try {
+      const response = await fetch(INSPECTION_API_URL + '?t=' + Date.now())
+      const result = await response.json()
+      setInspectionResult(result)
+    } catch (err) {
+      console.error('Inspection fetch error:', err)
+    }
   };
 
   const fetchTelemetry = async (isAutoRefresh = false) => {
@@ -52,39 +64,10 @@ function Status() {
       const response = await fetch(TELEMETRY_API_URL)
       const result = await response.json()
       
-      // Fetch historical data for chart (last 10 records)
-      const historyResponse = await fetch(`${TELEMETRY_API_URL}?limit=10`)
-      const historyResult = await historyResponse.json()
-      
       if (result.success) {
         setTelemetryData(result.data)
         setLastUpdated(new Date())
         setError(null)
-        
-        // Format historical data for chart
-        if (historyResult.success && historyResult.data) {
-          // Check if data is an array or single object
-          const dataArray = Array.isArray(historyResult.data) 
-            ? historyResult.data 
-            : [historyResult.data]
-          
-          const formattedChartData = dataArray.map((item) => {
-            const time = new Date(item.timestamp).toLocaleTimeString('en-US', { 
-              hour: '2-digit', 
-              minute: '2-digit',
-              second: '2-digit'
-            })
-            return {
-              label: time,
-              power: parseFloat(item.power_W.toFixed(2)),
-              current: parseFloat(item.current_mA.toFixed(2)),
-              voltage: parseFloat(item.voltage.toFixed(4)),
-              timestamp: item.timestamp
-            }
-          }).reverse() // Reverse to show oldest to newest
-          
-          setChartData(formattedChartData)
-        }
       } else {
         setError('Failed to fetch telemetry data')
       }
@@ -108,8 +91,12 @@ function Status() {
 
   useEffect(() => {
     fetchTelemetry(false)
-    // Refresh data and chart every 20 seconds
-    const interval = setInterval(() => fetchTelemetry(true), 20000)
+    fetchInspectionResult()
+    // Refresh data every 20 seconds
+    const interval = setInterval(() => {
+      fetchTelemetry(true)
+      fetchInspectionResult()
+    }, 20000)
     return () => clearInterval(interval)
   }, [])
 
@@ -163,11 +150,6 @@ function Status() {
               </div>
             </div>
 
-            {/* Chart Section Skeleton */}
-            <div className={styles.chartSection}>
-              <div className={`${styles.skeletonBox} ${styles.skeletonChartTitle}`}></div>
-              <div className={`${styles.skeletonBox} ${styles.skeletonChart}`}></div>
-            </div>
           </>
         )}
         
@@ -240,6 +222,27 @@ function Status() {
         {/* Live Camera Feed Section */}
         <div className={styles.imageSection}>
           <div className={styles.imageContainer}>
+            {/* Corner Labels - Red if blocked (true), Green if clean (false) */}
+            <span className={`${styles.cornerLabel} ${styles.topLeft} ${inspectionResult?.lu ? styles.blocked : styles.clean}`}>
+              LU {inspectionResult?.lu ? '🔴' : '🟢'}
+            </span>
+            <span className={`${styles.cornerLabel} ${styles.topRight} ${inspectionResult?.ru ? styles.blocked : styles.clean}`}>
+              RU {inspectionResult?.ru ? '🔴' : '🟢'}
+            </span>
+            <span className={`${styles.cornerLabel} ${styles.bottomLeft} ${inspectionResult?.ld ? styles.blocked : styles.clean}`}>
+              LD {inspectionResult?.ld ? '🔴' : '🟢'}
+            </span>
+            <span className={`${styles.cornerLabel} ${styles.bottomRight} ${inspectionResult?.rd ? styles.blocked : styles.clean}`}>
+              RD {inspectionResult?.rd ? '🔴' : '🟢'}
+            </span>
+            
+            {/* Object Above Indicator */}
+            {inspectionResult?.object_above && (
+              <div className={styles.objectAboveWarning}>
+                ⚠️ Object Detected Above Panel
+              </div>
+            )}
+
             {imageLoading && !imageError && (
               <div className={styles.loadingOverlay}>
                 <div className={styles.loadingText}>
@@ -281,114 +284,139 @@ function Status() {
           </div>
         </div>
 
-        {/* Chart Section */}
-        {telemetryData && chartData.length > 0 && (
-          <div className={styles.chartSection}>
-            <h2 className={styles.chartTitle}>Telemetry Over Time</h2>
-            <div className={styles.chartLegend}>
-              <div className={styles.legendItem}>
-                <span className={`${styles.legendColor} ${styles.powerLine}`}></span>
-                <span>Power (W)</span>
+        {/* Inspection Details Section */}
+        {inspectionResult && (
+          <div className={styles.inspectionDetails}>
+            <h2 className={styles.inspectionTitle}>Panel Inspection Report</h2>
+            
+            <div className={styles.inspectionSummary}>
+              <div className={styles.summaryCard}>
+                <div className={styles.summaryIcon}>
+                  {(() => {
+                    const blockedCount = [inspectionResult.lu, inspectionResult.ru, inspectionResult.ld, inspectionResult.rd].filter(Boolean).length;
+                    if (blockedCount === 0) return '✅';
+                    if (blockedCount <= 2) return '⚠️';
+                    return '❌';
+                  })()}
+                </div>
+                <div className={styles.summaryContent}>
+                  <h3 className={styles.summaryLabel}>Overall Status</h3>
+                  <p className={styles.summaryValue}>
+                    {(() => {
+                      const blockedCount = [inspectionResult.lu, inspectionResult.ru, inspectionResult.ld, inspectionResult.rd].filter(Boolean).length;
+                      if (blockedCount === 0) return 'All Clear';
+                      if (blockedCount <= 2) return 'Needs Attention';
+                      return 'Critical - Cleaning Required';
+                    })()}
+                  </p>
+                </div>
               </div>
-              <div className={styles.legendItem}>
-                <span className={`${styles.legendColor} ${styles.currentLine}`}></span>
-                <span>Current (mA)</span>
+
+              <div className={styles.summaryCard}>
+                <div className={styles.summaryIcon}>📊</div>
+                <div className={styles.summaryContent}>
+                  <h3 className={styles.summaryLabel}>Blocked Corners</h3>
+                  <p className={styles.summaryValue}>
+                    {[inspectionResult.lu, inspectionResult.ru, inspectionResult.ld, inspectionResult.rd].filter(Boolean).length} / 4
+                  </p>
+                </div>
+              </div>
+
+              <div className={styles.summaryCard}>
+                <div className={styles.summaryIcon}>🧹</div>
+                <div className={styles.summaryContent}>
+                  <h3 className={styles.summaryLabel}>Cleanliness</h3>
+                  <p className={styles.summaryValue}>
+                    {100 - ([inspectionResult.lu, inspectionResult.ru, inspectionResult.ld, inspectionResult.rd].filter(Boolean).length * 25)}%
+                  </p>
+                </div>
               </div>
             </div>
-            <div className={styles.lineChartContainer}>
-              {/* Calculate ranges for axis labels */}
-              {(() => {
-                const powerValues = chartData.map(item => item.power)
-                const currentValues = chartData.map(item => item.current)
-                
-                const maxPower = Math.max(...powerValues)
-                const minPower = Math.min(...powerValues)
-                const maxCurrent = Math.max(...currentValues)
-                const minCurrent = Math.min(...currentValues)
-                
-                // Add 20% padding to ranges for better visualization
-                const powerPadding = (maxPower - minPower) * 0.2 || 0.5
-                const currentPadding = (maxCurrent - minCurrent) * 0.2 || 5
-                
-                const powerMin = Math.max(0, minPower - powerPadding)
-                const powerMax = maxPower + powerPadding
-                const currentMin = Math.max(0, minCurrent - currentPadding)
-                const currentMax = maxCurrent + currentPadding
-                
-                // Create axis labels (5 levels)
-                const powerLabels = []
-                const currentLabels = []
-                for (let i = 4; i >= 0; i--) {
-                  powerLabels.push((powerMin + (powerMax - powerMin) * (i / 4)).toFixed(2))
-                  currentLabels.push((currentMin + (currentMax - currentMin) * (i / 4)).toFixed(1))
-                }
-                
+
+            <div className={styles.detailsGrid}>
+              <div className={styles.detailCard}>
+                <h4 className={styles.detailHeader}>Corner Status</h4>
+                <div className={styles.detailList}>
+                  <div className={`${styles.detailItem} ${inspectionResult.lu ? styles.statusBlocked : styles.statusClean}`}>
+                    <span className={styles.detailLabel}>Left Upper (LU):</span>
+                    <span className={styles.detailStatus}>
+                      {inspectionResult.lu ? '🔴 Blocked' : '🟢 Clean'}
+                    </span>
+                  </div>
+                  <div className={`${styles.detailItem} ${inspectionResult.ru ? styles.statusBlocked : styles.statusClean}`}>
+                    <span className={styles.detailLabel}>Right Upper (RU):</span>
+                    <span className={styles.detailStatus}>
+                      {inspectionResult.ru ? '🔴 Blocked' : '🟢 Clean'}
+                    </span>
+                  </div>
+                  <div className={`${styles.detailItem} ${inspectionResult.ld ? styles.statusBlocked : styles.statusClean}`}>
+                    <span className={styles.detailLabel}>Left Down (LD):</span>
+                    <span className={styles.detailStatus}>
+                      {inspectionResult.ld ? '🔴 Blocked' : '🟢 Clean'}
+                    </span>
+                  </div>
+                  <div className={`${styles.detailItem} ${inspectionResult.rd ? styles.statusBlocked : styles.statusClean}`}>
+                    <span className={styles.detailLabel}>Right Down (RD):</span>
+                    <span className={styles.detailStatus}>
+                      {inspectionResult.rd ? '🔴 Blocked' : '🟢 Clean'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.detailCard}>
+                <h4 className={styles.detailHeader}>Additional Information</h4>
+                <div className={styles.detailList}>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Object Above Panel:</span>
+                    <span className={`${styles.detailStatus} ${inspectionResult.object_above ? styles.statusWarning : styles.statusClean}`}>
+                      {inspectionResult.object_above ? '⚠️ Detected' : '✅ None'}
+                    </span>
+                  </div>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Image Source:</span>
+                    <span className={styles.detailStatus}>{inspectionResult.image_file}</span>
+                  </div>
+                  <div className={styles.detailItem}>
+                    <span className={styles.detailLabel}>Last Inspection:</span>
+                    <span className={styles.detailStatus}>
+                      {new Date(inspectionResult.timestamp).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {(() => {
+              const blockedCount = [inspectionResult.lu, inspectionResult.ru, inspectionResult.ld, inspectionResult.rd].filter(Boolean).length;
+              if (blockedCount > 0 || inspectionResult.object_above) {
                 return (
-                  <>
-                    {/* Left Y-axis (Current/Voltage) */}
-                    <div className={styles.yAxisLeft}>
-                      {currentLabels.map((label, idx) => (
-                        <span key={idx} className={styles.yLabel}>{label}</span>
-                      ))}
-                    </div>
-                    
-                    <div className={styles.chartArea}>
-                      <svg className={styles.lineChart} viewBox="0 0 500 200" preserveAspectRatio="none">
-                        {/* Grid lines */}
-                        <line x1="0" y1="10" x2="500" y2="10" stroke="#e0e0e0" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
-                        <line x1="0" y1="55" x2="500" y2="55" stroke="#e0e0e0" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
-                        <line x1="0" y1="100" x2="500" y2="100" stroke="#e0e0e0" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
-                        <line x1="0" y1="145" x2="500" y2="145" stroke="#e0e0e0" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
-                        <line x1="0" y1="190" x2="500" y2="190" stroke="#e0e0e0" strokeWidth="0.5" vectorEffect="non-scaling-stroke" />
-                        
-                        {/* Power Line (Right axis scale) */}
-                        <polyline
-                          points={chartData.map((d, i) => {
-                            const x = (i / Math.max(chartData.length - 1, 1)) * 500
-                            const range = powerMax - powerMin
-                            const normalized = range > 0 ? (d.power - powerMin) / range : 0.5
-                            const y = 190 - (normalized * 180) + 5
-                            return `${x},${y}`
-                          }).join(' ')}
-                          fill="none"
-                          stroke="#667eea"
-                          strokeWidth="2.5"
-                          vectorEffect="non-scaling-stroke"
-                        />
-                        
-                        {/* Current Line (Left axis scale) */}
-                        <polyline
-                          points={chartData.map((d, i) => {
-                            const x = (i / Math.max(chartData.length - 1, 1)) * 500
-                            const range = currentMax - currentMin
-                            const normalized = range > 0 ? (d.current - currentMin) / range : 0.5
-                            const y = 190 - (normalized * 180)
-                            return `${x},${y}`
-                          }).join(' ')}
-                          fill="none"
-                          stroke="#ef4444"
-                          strokeWidth="2.5"
-                          vectorEffect="non-scaling-stroke"
-                        />
-                      </svg>
-                    </div>
-                    
-                    {/* Right Y-axis (Power) */}
-                    <div className={styles.yAxisRight}>
-                      {powerLabels.map((label, idx) => (
-                        <span key={idx} className={styles.yLabel}>{label}</span>
-                      ))}
-                    </div>
-                  </>
-                )
-              })()}
-            </div>
-            <div className={styles.axisLabels}>
-              <span className={styles.axisLabelLeft}>Current (mA)</span>
-              <span className={styles.axisLabelRight}>Power (W)</span>
-            </div>
+                  <div className={styles.recommendationBox}>
+                    <h4 className={styles.recommendationTitle}>🔔 Recommendations</h4>
+                    <ul className={styles.recommendationList}>
+                      {blockedCount > 0 && (
+                        <li>Panel cleaning recommended for {blockedCount} blocked corner{blockedCount > 1 ? 's' : ''}</li>
+                      )}
+                      {inspectionResult.object_above && (
+                        <li>Remove object detected above the panel to prevent shading</li>
+                      )}
+                      {blockedCount >= 3 && (
+                        <li className={styles.urgentRecommendation}>⚠️ Urgent: Significant blockage detected - immediate cleaning recommended</li>
+                      )}
+                    </ul>
+                  </div>
+                );
+              }
+              return (
+                <div className={`${styles.recommendationBox} ${styles.allClear}`}>
+                  <h4 className={styles.recommendationTitle}>✅ All Clear</h4>
+                  <p>Panel is in optimal condition. No action required at this time.</p>
+                </div>
+              );
+            })()}
           </div>
         )}
+
       </div>
     </div>
   )

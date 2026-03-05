@@ -950,6 +950,65 @@
   border-radius: 16px;
 }
 
+.cornerLabel {
+  position: absolute;
+  background-color: rgba(90, 107, 239, 0.9);
+  color: white;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 4px;
+  z-index: 5;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.cornerLabel.blocked {
+  background-color: rgba(239, 68, 68, 0.95);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.cornerLabel.clean {
+  background-color: rgba(16, 185, 129, 0.95);
+}
+
+.objectAboveWarning {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(245, 158, 11, 0.95);
+  color: white;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 8px;
+  z-index: 6;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  animation: pulse 2s ease-in-out infinite;
+  text-align: center;
+}
+
+.topLeft {
+  top: 25px;
+  left: 25px;
+}
+
+.topRight {
+  top: 25px;
+  right: 25px;
+}
+
+.bottomLeft {
+  bottom: 25px;
+  left: 25px;
+}
+
+.bottomRight {
+  bottom: 25px;
+  right: 25px;
+}
+
 .loadingOverlay {
   position: absolute;
   top: 0;
@@ -991,6 +1050,7 @@
   max-width: 100%;
   height: auto;
   border-radius: 8px;
+  transform: rotate(180deg);
 }
 
 .panelImageHidden {
@@ -1061,4 +1121,212 @@
 .refreshButton svg {
     width: 12px;
     height: 12px;
+}
+
+/* Inspection Details Section */
+.inspectionDetails {
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 16px;
+  padding: 1rem;
+  max-width: 900px;
+  margin: 1rem auto 0;
+  backdrop-filter: blur(10px);
+}
+
+.inspectionTitle {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: clamp(1rem, 4vw, 1.2rem);
+  margin-bottom: 1rem;
+  text-align: center;
+  font-weight: 700;
+}
+
+.inspectionSummary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.summaryCard {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  border-radius: 10px;
+  border: 2px solid rgba(102, 126, 234, 0.2);
+  transition: transform 0.2s;
+}
+
+.summaryCard:hover {
+  transform: translateY(-2px);
+}
+
+.summaryIcon {
+  font-size: clamp(1.3rem, 4vw, 1.6rem);
+  flex-shrink: 0;
+}
+
+.summaryContent {
+  flex: 1;
+}
+
+.summaryLabel {
+  font-size: clamp(0.6rem, 2vw, 0.7rem);
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 0.2rem;
+  font-weight: 600;
+}
+
+.summaryValue {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: clamp(0.8rem, 3vw, 0.95rem);
+  font-weight: 700;
+  margin: 0;
+}
+
+.detailsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.detailCard {
+  background: #f8f9ff;
+  border-radius: 10px;
+  padding: 0.8rem;
+  border: 1px solid rgba(102, 126, 234, 0.15);
+}
+
+.detailHeader {
+  color: #667eea;
+  font-size: clamp(0.85rem, 3vw, 0.95rem);
+  margin-bottom: 0.6rem;
+  font-weight: 700;
+  border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+  padding-bottom: 0.3rem;
+}
+
+.detailList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.detailItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0.6rem;
+  background: white;
+  border-radius: 6px;
+  font-size: clamp(0.7rem, 2.5vw, 0.8rem);
+  border-left: 3px solid transparent;
+  transition: all 0.2s;
+}
+
+.detailItem:hover {
+  transform: translateX(3px);
+}
+
+.detailItem.statusBlocked {
+  border-left-color: #ef4444;
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.detailItem.statusClean {
+  border-left-color: #10b981;
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.detailItem.statusWarning {
+  border-left-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.detailLabel {
+  color: #555;
+  font-weight: 600;
+}
+
+.detailStatus {
+  color: #333;
+  font-weight: 700;
+}
+
+.recommendationBox {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(251, 191, 36, 0.1) 100%);
+  border: 2px solid rgba(245, 158, 11, 0.3);
+  border-radius: 10px;
+  padding: 0.8rem;
+  margin-top: 0.5rem;
+}
+
+.recommendationBox.allClear {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.recommendationTitle {
+  color: #f59e0b;
+  font-size: clamp(0.85rem, 3vw, 0.95rem);
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.allClear .recommendationTitle {
+  color: #10b981;
+}
+
+.recommendationList {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: #555;
+  font-size: clamp(0.7rem, 2.5vw, 0.8rem);
+}
+
+.recommendationList li {
+  margin-bottom: 0.3rem;
+  line-height: 1.4;
+}
+
+.urgentRecommendation {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.allClear p {
+  margin: 0;
+  color: #059669;
+  font-weight: 600;
+  font-size: clamp(0.75rem, 2.5vw, 0.85rem);
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+  .inspectionDetails {
+    padding: 0.8rem;
+  }
+  
+  .inspectionSummary {
+    grid-template-columns: 1fr;
+  }
+  
+  .detailsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .summaryCard {
+    padding: 0.5rem;
+  }
 }
