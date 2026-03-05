@@ -286,6 +286,7 @@
     .statusContainer {
         padding: 0.75rem;
         padding-bottom: 5rem;
+        padding-top: 80px;
     }
     
     .telemetryCard {

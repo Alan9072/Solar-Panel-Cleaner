@@ -115,7 +115,7 @@ function Status() {
       <Header />
       <Navbar/>
       <div className={styles.statusContainer}>
-        <h1 className={styles.title}>Device Telemetry Status</h1>
+        {/* <h1 className={styles.title}>Device Telemetry Status</h1> */}
         
         {loading && !telemetryData && (
           <>
