@@ -235,13 +235,6 @@ function Status() {
             <span className={`${styles.cornerLabel} ${styles.bottomRight} ${inspectionResult?.rd ? styles.blocked : styles.clean}`}>
               RD {inspectionResult?.rd ? '🔴' : '🟢'}
             </span>
-            
-            {/* Object Above Indicator */}
-            {inspectionResult?.object_above && (
-              <div className={styles.objectAboveWarning}>
-                ⚠️ Object Detected Above Panel
-              </div>
-            )}
 
             {imageLoading && !imageError && (
               <div className={styles.loadingOverlay}>
