@@ -1007,22 +1007,22 @@
 
 .topLeft {
   top: 30px;
-  left: 20px;
+  left: 25px;
 }
 
 .topRight {
   top: 30px;
-  right: 20px;
+  right: 25px;
 }
 
 .bottomLeft {
   bottom: 30px;
-  left: 20px;
+  left: 25px;
 }
 
 .bottomRight {
   bottom: 30px;
-  right: 20px;
+  right: 25px;
 }
 
 .loadingOverlay {
