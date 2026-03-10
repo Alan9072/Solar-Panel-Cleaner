@@ -163,7 +163,6 @@ function Status() {
               <h2>Device ID: {telemetryData.deviceId}</h2>
               <p className={styles.timestamp}>
                 Last Updated: {lastUpdated ? lastUpdated.toLocaleString() : 'Just now'}
-                {refreshing && <span className={styles.refreshIndicator}> • Updating...</span>}
               </p>
             </div>
             
