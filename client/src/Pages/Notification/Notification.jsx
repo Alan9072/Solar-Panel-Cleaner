@@ -36,7 +36,8 @@ function Notification() {
             'rd': 'Right Down',
             'ru': 'Right Up',
             'ld': 'Left Down',
-            'lu': 'Left Up'
+            'lu': 'Left Up',
+            'unknown_region': 'Object Above Panel'
           };
           const regionName = regionMap[alert.region] || alert.region.toUpperCase();
           
@@ -46,7 +47,7 @@ function Notification() {
           return {
             id: alert.timestamp,
             type: type,
-            title: `${alert.status === 'unresolved' ? '⚠️ ' : ''}Region ${regionName}`,
+            title: `${alert.status === 'unresolved' ? '⚠️ ' : ''}${alert.region === 'unknown_region' ? '' : 'Region '}${regionName}`,
             message: alert.message,
             time: timeAgo,
             read: alert.status === 'resolved',
