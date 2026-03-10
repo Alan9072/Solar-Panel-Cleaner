@@ -192,19 +192,33 @@
 
 .metricsGrid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
+}
+
+@media (max-width: 768px) {
+    .metricsGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .metricsGrid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .metricCard {
 
     border: 2px solid rgba(102, 126, 234, 0.2);
-    border-radius: 16px;
-    padding: 1.2rem 0.8rem;
+    border-radius: 12px;
+    
     text-align: center;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
+    display: flex;
+    align-items: center;
 }
 
 .metricCard::before {
@@ -226,17 +240,16 @@
 }
 
 .metricIcon {
-    font-size: clamp(2rem, 8vw, 2.5rem);
-    margin-bottom: 0.3rem;
+    font-size: clamp(1.5rem, 6vw, 1.8rem);
+    margin-bottom: 0.2rem;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 .metricLabel {
     color: #666;
-    font-size: clamp(0.7rem, 2vw, 0.8rem);
+    font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-bottom: 0.4rem;
     font-weight: 600;
 }
 
@@ -245,9 +258,10 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    font-size: clamp(1.3rem, 4vw, 1.6rem);
+    font-size: clamp(1rem, 3.5vw, 1.2rem);
     font-weight: 800;
     letter-spacing: -0.5px;
+    margin-left: 20px;
 }
 
 .refreshBtn {
@@ -299,7 +313,7 @@
     }
     
     .metricCard {
-        padding: 1rem 0.6rem;
+        padding: 7px;
         border-radius: 12px;
     }
 }

@@ -126,7 +126,7 @@ function Status() {
                 <div className={`${styles.skeletonBox} ${styles.skeletonText}`}></div>
               </div>
               <div className={styles.metricsGrid}>
-                {[1, 2, 3, 4].map((i) => (
+                {[1, 2, 3].map((i) => (
                   <div key={i} className={styles.metricCard}>
                     <div className={`${styles.skeletonBox} ${styles.skeletonIcon}`}></div>
                     <div className={`${styles.skeletonBox} ${styles.skeletonLabel}`}></div>
@@ -200,18 +200,6 @@ function Status() {
                     <span className={styles.skeleton}>--.-</span>
                   ) : (
                     `${telemetryData.current_mA.toFixed(2)} mA`
-                  )}
-                </div>
-              </div>
-              
-              <div className={`${styles.metricCard} ${refreshing ? styles.updating : ''}`}>
-                <div className={styles.metricIcon}>🔋</div>
-                <div className={styles.metricLabel}>Voltage</div>
-                <div className={styles.metricValue}>
-                  {refreshing ? (
-                    <span className={styles.skeleton}>-.----</span>
-                  ) : (
-                    `${telemetryData.voltage.toFixed(4)} V`
                   )}
                 </div>
               </div>
@@ -370,34 +358,6 @@ function Status() {
                 </div>
               </div>
             </div>
-
-            {(() => {
-              const blockedCount = [inspectionResult.lu, inspectionResult.ru, inspectionResult.ld, inspectionResult.rd].filter(Boolean).length;
-              if (blockedCount > 0 || inspectionResult.object_above) {
-                return (
-                  <div className={styles.recommendationBox}>
-                    <h4 className={styles.recommendationTitle}>🔔 Recommendations</h4>
-                    <ul className={styles.recommendationList}>
-                      {blockedCount > 0 && (
-                        <li>Panel cleaning recommended for {blockedCount} blocked corner{blockedCount > 1 ? 's' : ''}</li>
-                      )}
-                      {inspectionResult.object_above && (
-                        <li>Remove object detected above the panel to prevent shading</li>
-                      )}
-                      {blockedCount >= 3 && (
-                        <li className={styles.urgentRecommendation}>⚠️ Urgent: Significant blockage detected - immediate cleaning recommended</li>
-                      )}
-                    </ul>
-                  </div>
-                );
-              }
-              return (
-                <div className={`${styles.recommendationBox} ${styles.allClear}`}>
-                  <h4 className={styles.recommendationTitle}>✅ All Clear</h4>
-                  <p>Panel is in optimal condition. No action required at this time.</p>
-                </div>
-              );
-            })()}
           </div>
         )}
 
