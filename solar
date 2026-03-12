@@ -1,0 +1,724 @@
+#include <WiFi.h>
+#include <WiFiClientSecure.h>
+#include <esp_now.h>
+#include <PubSubClient.h>
+#include <HTTPClient.h>
+#include <ArduinoJson.h>
+#include <Preferences.h>
+#include "secrets.h"
+
+/************ Inspection API ************/
+const char* apiUrl="https://opufcp3ut6.execute-api.ap-south-1.amazonaws.com/inspect";
+const char* bucket="esp32-solarimg";
+const char* imgKey="current-panel.jpg";
+
+/************ Receiver ESP32-CAM MAC ************/
+uint8_t camMAC[] = {0x84,0x1F,0xE8,0x68,0x8F,0xA4};
+
+/************ Relay ESP32 MAC ************/
+uint8_t relayMAC[] = {0x88,0x57,0x21,0x78,0xE7,0x80};
+
+/************ MQTT ************/
+const char* DEVICE_ID = "ESP32-Solar-Controller";
+const char* CONTROL_TOPIC = "solar/panel/control";
+const char* STATUS_TOPIC = "solar/panel/status";
+const char* ALERT_TOPIC = "solar/panel/alerts";
+
+/************ MOTOR PINS ************/
+#define STEP_PIN 5
+#define DIR_PIN 6
+
+/************ MOTOR SPEED SETTINGS ************/
+int startDelay = 2500;
+int runDelay = 300;
+int accelStep = 30;
+
+int slowStartDelay = 3500;
+int slowRunDelay = 1200;  // 5x slower for deep cleaning
+int slowAccelStep = 20;
+
+/************ MOTOR DISTANCE SETTINGS ************/
+#define STEPS_PER_CM 400
+
+/************ OBJECT CLEARANCE SETTINGS ************/
+#define MAX_OBJECT_ATTEMPTS 1
+
+/************ MOTOR STEP COUNTER ************/
+volatile long stepCounter = 0;
+
+/************ Objects ************/
+WiFiClientSecure wifiClient;
+PubSubClient mqttClient(wifiClient);
+Preferences prefs;
+
+/************ State ************/
+bool systemState = false;
+bool waitingForUpload = false;
+unsigned long captureStartTime = 0;
+unsigned long lastTrigger = 0;
+const unsigned long triggerInterval = 15000;
+const unsigned long uploadTimeout = 60000;
+
+/**************** RELAY COMMUNICATION - SEND 20 TIMES ****************/
+void sendToRelay(const char* message) {
+  Serial.printf("📤 Sending to Relay: %s (20 times)\n", message);
+  
+  for(int attempt = 1; attempt <= 20; attempt++) {
+    char msgWithAttempt[32];
+    snprintf(msgWithAttempt, sizeof(msgWithAttempt), "%s,%d", message, attempt);
+    
+    esp_err_t result = esp_now_send(relayMAC, (uint8_t*)msgWithAttempt, strlen(msgWithAttempt));
+    
+    if(result == ESP_OK) {
+      Serial.printf("   Attempt %d/20: Sent %s ✓\n", attempt, msgWithAttempt);
+    } else {
+      Serial.printf("   Attempt %d/20: Send failed ❌\n", attempt);
+    }
+    
+    delay(300);  // 300ms delay between sends
+  }
+  
+  Serial.println("   ✅ Completed 20 sends - Moving on");
+}
+
+void deployMotor() {
+  Serial.println("🔧 MOTOR: Deploying - Moving right 30 CM");
+  digitalWrite(DIR_PIN, HIGH);
+  moveExactCM(30);
+  Serial.println("✅ MOTOR: Deployed");
+}
+
+void retractMotor() {
+  Serial.println("🔧 MOTOR: Retracting - Moving left 30 CM");
+  digitalWrite(DIR_PIN, LOW);
+  moveExactCM(30);
+  Serial.println("✅ MOTOR: Retracted");
+}
+
+/**************** MOTOR FUNCTIONS ****************/
+void stepMotor(int delayUs) {
+  digitalWrite(STEP_PIN, HIGH);
+  delayMicroseconds(delayUs);
+  digitalWrite(STEP_PIN, LOW);
+  delayMicroseconds(delayUs);
+  stepCounter++;
+}
+
+long calculateAccelSteps() {
+  long count = 0;
+  for (int d = startDelay; d > runDelay; d -= accelStep) {
+    count++;
+  }
+  return count;
+}
+
+void moveExactCM(int distanceCM) {
+  stepCounter = 0;
+  long totalSteps = distanceCM * STEPS_PER_CM;
+  long accelSteps = calculateAccelSteps();
+  long cruiseSteps = totalSteps - (2 * accelSteps);
+  if (cruiseSteps < 0) cruiseSteps = 0;
+
+  // ACCEL
+  for (int d = startDelay; d > runDelay; d -= accelStep) {
+    stepMotor(d);
+  }
+
+  // CRUISE
+  for (long i = 0; i < cruiseSteps; i++) {
+    stepMotor(runDelay);
+  }
+
+  // DECEL
+  for (int d = runDelay; d < startDelay; d += accelStep) {
+    stepMotor(d);
+  }
+}
+
+void moveExactCMSlow(int distanceCM) {
+  stepCounter = 0;
+  long totalSteps = distanceCM * STEPS_PER_CM;
+  
+  long accelSteps = 0;
+  for (int d = slowStartDelay; d > slowRunDelay; d -= slowAccelStep) {
+    accelSteps++;
+  }
+  
+  long cruiseSteps = totalSteps - (2 * accelSteps);
+  if (cruiseSteps < 0) cruiseSteps = 0;
+
+  // ACCEL
+  for (int d = slowStartDelay; d > slowRunDelay; d -= slowAccelStep) {
+    stepMotor(d);
+  }
+
+  // CRUISE
+  for (long i = 0; i < cruiseSteps; i++) {
+    stepMotor(slowRunDelay);
+  }
+
+  // DECEL
+  for (int d = slowRunDelay; d < slowStartDelay; d += slowAccelStep) {
+    stepMotor(d);
+  }
+}
+
+/**************** 📸 CAPTURE SEQUENCE FUNCTION ****************/
+void performCapture() {
+  // Send capture command to ESP32-CAM (no motor movement needed)
+  esp_now_send(camMAC, (uint8_t*)"CAPTURE", 8);
+  Serial.println("📤 Sent → CAPTURE");
+  delay(2000); // Give camera time to capture
+
+  waitingForUpload = true;
+  captureStartTime = millis();
+}
+
+/**************** MQTT Callback ****************/
+void mqttCallback(char* topic, byte* payload, unsigned int length) {
+  StaticJsonDocument<128> doc;
+  if(deserializeJson(doc, payload, length)) return;
+
+  bool newState = systemState;
+  
+  if(doc.containsKey("state")) {
+    const char* s = doc["state"];
+    if(strcasecmp(s, "on") == 0) newState = true;
+    else if(strcasecmp(s, "off") == 0) newState = false;
+  }
+
+  if(doc.containsKey("command")) {
+    int cmd = doc["command"];
+    if(cmd == 1) newState = true;
+    else if(cmd == 0) newState = false;
+  }
+
+  if(newState != systemState) {
+    systemState = newState;
+    prefs.begin("system", false);
+    prefs.putBool("on", systemState);
+    prefs.end();
+    
+    Serial.println(systemState ? "✅ SYSTEM ON" : "⏸️ SYSTEM OFF");
+    
+    StaticJsonDocument<64> s;
+    s["state"] = systemState ? "on" : "off";
+    char buf[64];
+    serializeJson(s, buf);
+    mqttClient.publish(STATUS_TOPIC, buf);
+  }
+}
+
+/**************** ESP-NOW Callback ****************/
+void onRecv(const esp_now_recv_info *info, const uint8_t *data, int len){
+  String msg = "";
+  for(int i = 0; i < len; i++) msg += char(data[i]);
+  
+  Serial.println("📥 Received → " + msg);
+
+  // Check if this is from camera ESP
+  bool isFromCamera = (memcmp(info->src_addr, camMAC, 6) == 0);
+
+  
+  // Handle camera responses only
+  if(isFromCamera) {
+    if(msg == "UPLOAD_SUCCESS"){
+      if(systemState){
+        Serial.println("🟢 Upload Success - Restarting for API");
+        
+        prefs.begin("regions", true);
+        String currentProcessed = prefs.getString("list", "");
+        prefs.end();
+        Serial.printf("DEBUG: processedRegions before restart = '%s'\n", currentProcessed.c_str());
+        
+        prefs.begin("sender", false);
+        prefs.putBool("callAPI", true);
+        prefs.putULong("uploadTime", millis());
+        prefs.end();
+        
+        delay(2000);
+        ESP.restart();
+      } else {
+        Serial.println("💤 Upload Success - But system is OFF, skipping");
+        waitingForUpload = false;
+      }
+    } 
+    else if(msg == "UPLOAD_FAILED"){
+      Serial.println("🔴 Upload Failed");
+      waitingForUpload = false;
+    } 
+    else if(msg == "CAPTURE_OK"){
+      Serial.println("📸 Capture acknowledged");
+    }
+  }
+}
+
+/**************** Send Capture ****************/
+void sendCapture(){
+  Serial.println("\n📤 Starting capture sequence...");
+  performCapture();
+}
+
+/**************** Handle Object Above ****************/
+void handleObjectAbove() {
+  Serial.println("\n🚨 OBJECT ABOVE DETECTED - Starting clearance sequence");
+
+  prefs.begin("sender", true);
+  int attempt = prefs.getInt("objectAttempt", 0);
+  prefs.end();
+
+  attempt++;
+  Serial.printf("\n═══ OBJECT CLEARANCE - Attempt %d/%d ═══\n", attempt, MAX_OBJECT_ATTEMPTS);
+
+  Serial.println("🔧 MOTOR: Moving forward 30 CM");
+  digitalWrite(DIR_PIN, HIGH);
+  moveExactCM(30);
+  Serial.println("✅ MOTOR: Reached 30 CM");
+
+  Serial.println("🔧 MOTOR: Moving back 30 CM");
+  digitalWrite(DIR_PIN, LOW);
+  moveExactCM(30);
+  Serial.println("✅ MOTOR: Returned to start");
+
+  performCapture();
+
+  prefs.begin("sender", false);
+  if(attempt >= MAX_OBJECT_ATTEMPTS) {
+    prefs.putBool("objectFailed", true);
+    prefs.putInt("objectAttempt", 0);
+  } else {
+    prefs.putInt("objectAttempt", attempt);
+  }
+  prefs.putBool("callAPI", true);
+  prefs.end();
+
+  Serial.printf("⏳ Waiting for upload to complete (Attempt %d/%d)...\n", attempt, MAX_OBJECT_ATTEMPTS);
+}
+
+/**************** Handle Dirty Regions ****************/
+void handleDirtyRegions(bool lu, bool ld, bool ru, bool rd) {
+  if(!lu && !ld && !ru && !rd) return;
+
+  prefs.begin("regions", true);
+  String processedRegions = prefs.getString("list", "");
+  prefs.end();
+
+  Serial.println("\n🧹 DIRTY REGIONS DETECTED - Starting cleaning sequence");
+  Serial.print("Regions to clean: [");
+  bool first = true;
+  if(lu) { Serial.print("lu"); first = false; }
+  if(ld) { if(!first) Serial.print(", "); Serial.print("ld"); first = false; }
+  if(ru) { if(!first) Serial.print(", "); Serial.print("ru"); first = false; }
+  if(rd) { if(!first) Serial.print(", "); Serial.print("rd"); }
+  Serial.println("]");
+
+  String regionToClean = "";
+  if(lu && processedRegions.indexOf("lu") == -1) regionToClean = "lu";
+  else if(ld && processedRegions.indexOf("ld") == -1) regionToClean = "ld";
+  else if(ru && processedRegions.indexOf("ru") == -1) regionToClean = "ru";
+  else if(rd && processedRegions.indexOf("rd") == -1) regionToClean = "rd";
+
+  if(regionToClean == "") {
+    Serial.println("✅ All regions processed");
+    prefs.begin("regions", false);
+    prefs.putString("list", "");
+    prefs.end();
+    retractMotor();
+    Serial.println("\n⏳ Waiting 10 seconds before next capture...");
+    delay(10000);
+    Serial.println("✅ Wait complete - Starting next loop cycle\n");
+    return;
+  }
+
+  Serial.printf("\n--- Cleaning Region: %s ---\n", regionToClean.c_str());
+
+  // Send CONNECT (20 times)
+  sendToRelay("CONNECT");
+  delay(500);
+
+  if(regionToClean == "lu" || regionToClean == "ld") {
+    // Send relay activation (20 times)
+    sendToRelay(regionToClean.c_str());
+    delay(500);
+
+    Serial.println("🔧 MOTOR: Moving forward 15 CM (SLOW - Deep Cleaning)");
+    digitalWrite(DIR_PIN, HIGH);
+    moveExactCMSlow(15);
+    Serial.println("✅ MOTOR: Position reached");
+
+    esp_now_send(camMAC, (uint8_t*)"CAPTURE", 8);
+    Serial.printf("📤 Capturing %s region\n", regionToClean.c_str());
+    delay(2000);
+
+    Serial.println("🔧 MOTOR: Moving back 15 CM (SLOW)");
+    digitalWrite(DIR_PIN, LOW);
+    moveExactCMSlow(15);
+    Serial.println("✅ MOTOR: Returned to start");
+
+    esp_now_send(camMAC, (uint8_t*)"CAPTURE", 8);
+    Serial.printf("📤 Capturing %s region\n", regionToClean.c_str());
+    delay(2000);
+
+    // Send STOP (20 times)
+    sendToRelay("STOP");
+    delay(500);
+    
+  } else if(regionToClean == "ru" || regionToClean == "rd") {
+    // Send relay activation (20 times)
+    sendToRelay(regionToClean.c_str());
+    delay(500);
+
+    Serial.println("🔧 MOTOR: Moving forward 15 CM (1st - Normal to reach region)");
+    digitalWrite(DIR_PIN, HIGH);
+    moveExactCM(15);
+    Serial.println("✅ MOTOR: 15 CM reached");
+
+    Serial.println("🔧 MOTOR: Moving forward 15 CM (2nd - SLOW Deep Cleaning)");
+    moveExactCMSlow(15);
+    Serial.println("✅ MOTOR: 30 CM reached");
+
+    Serial.println("🔧 MOTOR: Moving back 15 CM (SLOW Deep Cleaning)");
+    digitalWrite(DIR_PIN, LOW);
+    moveExactCMSlow(15);
+    Serial.println("✅ MOTOR: 15 CM position reached");
+
+    Serial.println("🔧 MOTOR: Moving back 15 CM (Normal to start)");
+    moveExactCM(15);
+    Serial.println("✅ MOTOR: Returned to start");
+
+    esp_now_send(camMAC, (uint8_t*)"CAPTURE", 8);
+    Serial.printf("📤 Capturing %s region\n", regionToClean.c_str());
+    delay(2000);
+
+    // Send STOP (20 times)
+    sendToRelay("STOP");
+    delay(500);
+  }
+
+  if(processedRegions != "") processedRegions += ",";
+  processedRegions += regionToClean;
+
+  Serial.println("\n⏳ Waiting for upload to complete...");
+  waitingForUpload = true;
+  captureStartTime = millis();
+
+  prefs.begin("regions", false);
+  prefs.putString("list", processedRegions);
+  prefs.end();
+  
+  prefs.begin("sender", false);
+  prefs.putBool("callAPI", true);
+  prefs.end();
+
+  Serial.printf("DEBUG: Saved to 'regions' namespace = '%s'\n", processedRegions.c_str());
+  delay(1000);
+
+  prefs.begin("regions", true);
+  String verify = prefs.getString("list", "EMPTY");
+  prefs.end();
+  Serial.printf("DEBUG: Verified from 'regions' namespace = '%s'\n", verify.c_str());
+}
+
+/**************** Call API ****************/
+void callInspectionAPI(){
+  if(WiFi.status() != WL_CONNECTED) return;
+
+  HTTPClient http;
+  http.begin(apiUrl);
+  http.addHeader("Content-Type", "application/json");
+  http.setTimeout(120000);
+
+  StaticJsonDocument<200> doc;
+  doc["bucket"] = bucket;
+  doc["key"] = imgKey;
+
+  String body;
+  serializeJson(doc, body);
+
+  Serial.println("🤖 Calling Inspection API...");
+  unsigned long start = millis();
+  int code = http.POST(body);
+  Serial.printf("🌐 Status: %d (%.1fs)\n", code, (millis()-start)/1000.0);
+
+  if(code == 200){
+    String response = http.getString();
+    Serial.println(response);
+
+    DynamicJsonDocument result(1024);
+    if(!deserializeJson(result, response)){
+      JsonObject data = result.containsKey("result") ? result["result"].as<JsonObject>() : result.as<JsonObject>();
+
+      bool objectAbove = data["object_above"] | false;
+      bool lu = data["lu"] | false;
+      bool ld = data["ld"] | false;
+      bool ru = data["ru"] | false;
+      bool rd = data["rd"] | false;
+
+      int dirtyCount = (lu ? 1 : 0) + (ld ? 1 : 0) + (ru ? 1 : 0) + (rd ? 1 : 0);
+
+      Serial.println("\n========== INSPECTION RESULTS ==========");
+      Serial.printf("Object Above: %s\n", objectAbove ? "YES ⚠️" : "NO ✓");
+      Serial.print("Dirty Regions: ");
+      if(dirtyCount == 0) {
+        Serial.println("None ✓");
+      } else {
+        Serial.print("[");
+        bool first = true;
+        if(lu) { Serial.print("lu"); first = false; }
+        if(ld) { if(!first) Serial.print(", "); Serial.print("ld"); first = false; }
+        if(ru) { if(!first) Serial.print(", "); Serial.print("ru"); first = false; }
+        if(rd) { if(!first) Serial.print(", "); Serial.print("rd"); }
+        Serial.println("]");
+      }
+      Serial.println("========================================");
+
+      prefs.begin("regions", true);
+      String processedRegions = prefs.getString("list", "");
+      prefs.end();
+      Serial.printf("DEBUG: processedRegions = '%s'\n", processedRegions.c_str());
+
+      if(processedRegions != "") {
+        Serial.println("\n🔄 DIRTY REGION CLEANING IN PROGRESS");
+        Serial.printf("Already cleaned: [%s]\n", processedRegions.c_str());
+
+        String lastCleaned = "";
+        int lastComma = processedRegions.lastIndexOf(',');
+        if(lastComma != -1) {
+          lastCleaned = processedRegions.substring(lastComma + 1);
+        } else {
+          lastCleaned = processedRegions;
+        }
+
+        if((lastCleaned == "lu" && lu) || (lastCleaned == "ld" && ld) || 
+          (lastCleaned == "ru" && ru) || (lastCleaned == "rd" && rd)) {
+            Serial.printf("⚠️ Region '%s' was cleaned but STILL DIRTY\n", lastCleaned.c_str());
+
+            StaticJsonDocument<256> alert;
+            alert["alert"] = "region_not_cleaned";
+            alert["message"] = "Solar panel region could not be cleaned - Manual cleaning needed";
+            alert["device"] = DEVICE_ID;
+            alert["region"] = lastCleaned;
+            char alertBuf[256];
+            serializeJson(alert, alertBuf);
+            Serial.println(alertBuf);
+            mqttClient.publish(ALERT_TOPIC, alertBuf);
+            Serial.println("📡 Alert sent to AWS");
+        }
+
+        if(dirtyCount > 0) {
+          handleDirtyRegions(lu, ld, ru, rd);
+        } else {
+          Serial.println("\n✅ ALL DIRTY REGIONS COMPLETED");
+          prefs.begin("regions", false);
+          prefs.putString("list", "");
+          prefs.end();
+          retractMotor();
+          delay(5000);
+        }
+        return;
+      }
+
+      prefs.begin("sender", true);
+      bool objectFailed = prefs.getBool("objectFailed", false);
+      int currentAttempt = prefs.getInt("objectAttempt", 0);
+      prefs.end();
+
+      if(!objectAbove && (currentAttempt > 0 || objectFailed)) {
+        Serial.println("\n✅ OBJECT CLEARED SUCCESSFULLY!");
+        prefs.begin("sender", false);
+        prefs.putBool("objectFailed", false);
+        prefs.putInt("objectAttempt", 0);
+        prefs.end();
+      }
+
+      if(objectFailed && objectAbove) {
+        Serial.printf("\n🚨 ALERT: OBJECT PERSISTS AFTER %d ATTEMPTS 🚨\n", MAX_OBJECT_ATTEMPTS);
+        
+        StaticJsonDocument<128> alert;
+        alert["alert"] = "object_persists";
+        alert["message"] = "Object above solar panel could not be cleared - Manual cleaning needed";
+        alert["device"] = DEVICE_ID;
+        alert["attempts"] = MAX_OBJECT_ATTEMPTS;
+        char alertBuf[256];
+        serializeJson(alert, alertBuf);
+        Serial.println(alertBuf);
+        mqttClient.publish(ALERT_TOPIC, alertBuf);
+        Serial.println("📡 Alert sent to AWS");
+        
+        prefs.begin("sender", false);
+        prefs.putBool("objectFailed", false);
+        prefs.putInt("objectAttempt", 0);
+        prefs.end();
+
+        if(dirtyCount > 0) {
+            Serial.println("→ Switching to dirty region cleaning");
+            handleDirtyRegions(lu, ld, ru, rd);
+            return;
+        }
+
+        Serial.println("⏸️ Max attempts reached - waiting for next cycle");
+        retractMotor();
+        delay(10000);
+        return;
+    }
+
+      if(objectAbove && !objectFailed && currentAttempt == 0) {
+        handleObjectAbove();
+        return;
+      }
+
+      if(dirtyCount > 0) {
+        handleDirtyRegions(lu, ld, ru, rd);
+        return;
+      }
+
+      Serial.println("\n╔══════════════════════════════════════╗");
+      Serial.println("║ NEXT CYCLE SOON ║");
+      Serial.println("╚══════════════════════════════════════╝");
+      retractMotor();
+      Serial.println("⏳ Waiting 10 seconds before next capture...");
+      delay(10000);
+      Serial.println("✅ Wait complete - Starting next loop cycle\n");
+    }
+  } else {
+    Serial.printf("❌ API Error: %d\n", code);
+    String errorResponse = http.getString();
+    Serial.println("📄 Error Response:");
+    Serial.println(errorResponse);
+  }
+
+  http.end();
+}
+
+/**************** Setup ****************/
+void setup(){
+  Serial.begin(115200);
+  delay(1000);
+
+  pinMode(STEP_PIN, OUTPUT);
+  pinMode(DIR_PIN, OUTPUT);
+  Serial.println("🔧 Motor pins initialized");
+
+  prefs.begin("system", true);
+  systemState = prefs.getBool("on", true);
+  prefs.end();
+
+  prefs.begin("sender", true);
+  bool shouldCallAPI = prefs.getBool("callAPI", false);
+  prefs.end();
+
+  if(!shouldCallAPI) {
+    prefs.begin("sender", false);
+    prefs.clear();
+    prefs.end();
+    Serial.println("🧹 Cleared stale tracking data");
+  }
+
+  WiFi.mode(WIFI_STA);
+  WiFi.setAutoReconnect(true);
+  WiFi.persistent(true);
+
+  Serial.println("🔧 Initializing ESP-NOW...");
+  esp_err_t initResult = esp_now_init();
+  if(initResult == ESP_OK){
+    Serial.println("✅ ESP-NOW initialized successfully");
+    esp_now_register_recv_cb(onRecv);
+
+    esp_now_peer_info_t peer = {};
+    memcpy(peer.peer_addr, camMAC, 6);
+    esp_now_add_peer(&peer);
+
+    esp_now_peer_info_t relayPeer = {};
+    memcpy(relayPeer.peer_addr, relayMAC, 6);
+    esp_now_add_peer(&relayPeer);
+
+    Serial.println("📡 ESP-NOW fully configured");
+  }
+
+  Serial.print("📡 WiFi");
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  while(WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(300);
+  }
+  Serial.println(" ✔");
+
+  wifiClient.setCACert(AWS_ROOT_CA);
+  wifiClient.setCertificate(DEVICE_CERT);
+  wifiClient.setPrivateKey(DEVICE_PRIVATE_KEY);
+  mqttClient.setServer(AWS_IOT_ENDPOINT, AWS_IOT_PORT);
+  mqttClient.setCallback(mqttCallback);
+
+  Serial.print("☁️ AWS");
+  while(!mqttClient.connected()){
+    if(mqttClient.connect(DEVICE_ID)){
+      Serial.println(" ✔");
+      mqttClient.subscribe(CONTROL_TOPIC);
+    } else {
+      Serial.print(".");
+      delay(1000);
+    }
+  }
+
+  if(shouldCallAPI){
+    prefs.begin("sender", true);
+    unsigned long uploadTime = prefs.getULong("uploadTime", 0);
+    prefs.end();
+
+    prefs.begin("regions", true);
+    String debugProcessed = prefs.getString("list", "");
+    prefs.end();
+
+    bool recentRestart = (millis() < 60000);
+    
+    if(systemState && recentRestart){
+      Serial.println("🔄 API CALL PENDING - Executing...");
+      Serial.printf("DEBUG: processedRegions = '%s'\n", debugProcessed.c_str());
+      delay(1000);
+      callInspectionAPI();
+
+      prefs.begin("sender", false);
+      prefs.putBool("callAPI", false);
+      prefs.remove("uploadTime");
+      prefs.end();
+    } else {
+      Serial.println("⚠️ Stale API flag - Starting fresh");
+      prefs.begin("sender", false);
+      prefs.putBool("callAPI", false);
+      prefs.remove("uploadTime");
+      prefs.end();
+    }
+  } else {
+    Serial.println("📸 Fresh start - Will begin capture cycle");
+  }
+
+  Serial.print("\n══════ READY (");
+  Serial.print(systemState ? "ON" : "OFF");
+  Serial.println(") ══════\n");
+}
+
+/**************** Loop ****************/
+void loop(){
+  if(!mqttClient.connected()){
+    if(mqttClient.connect(DEVICE_ID)){
+      mqttClient.subscribe(CONTROL_TOPIC);
+    }
+  }
+  mqttClient.loop();
+
+  if(systemState){
+    if(!waitingForUpload && millis() - lastTrigger >= triggerInterval){
+      lastTrigger = millis();
+      deployMotor();
+      sendCapture();
+    }
+
+    if(waitingForUpload && millis() - captureStartTime > uploadTimeout){
+      Serial.println("⏱️ Timeout");
+      waitingForUpload = false;
+      lastTrigger = millis();
+    }
+  }
+
+  delay(50);
+}
