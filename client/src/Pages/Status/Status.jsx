@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import Navbar from '../../Components/Navbar/Navbar'
 import styles from './Status.module.css'
 import Header from '../../Components/Header/Header'
@@ -13,6 +13,9 @@ function Status() {
   const [error, setError] = useState(null)
   const [lastUpdated, setLastUpdated] = useState(null)
   const [inspectionResult, setInspectionResult] = useState(null)
+  const [showInspectionColors, setShowInspectionColors] = useState(false)
+  const inspectionColorTimeoutRef = useRef(null)
+  const lastInspectionTimestampRef = useRef(null)
   
   // Image viewer states
   const [timestamp, setTimestamp] = useState(Date.now());
@@ -37,7 +40,6 @@ function Status() {
     setTimestamp(Date.now());
     setImageError(false);
     setImageLoading(true);
-    fetchInspectionResult();
   };
 
   const fetchInspectionResult = async () => {
@@ -45,6 +47,22 @@ function Status() {
       const response = await fetch(INSPECTION_API_URL + '?t=' + Date.now())
       const result = await response.json()
       setInspectionResult(result)
+
+      const currentInspectionTimestamp = result?.timestamp ?? null
+
+      // Trigger highlight only when the inspection timestamp changes.
+      if (lastInspectionTimestampRef.current !== currentInspectionTimestamp) {
+        lastInspectionTimestampRef.current = currentInspectionTimestamp
+
+        // Show inspection-based corner colors only when a new inspection result arrives.
+        setShowInspectionColors(true)
+        if (inspectionColorTimeoutRef.current) {
+          clearTimeout(inspectionColorTimeoutRef.current)
+        }
+        inspectionColorTimeoutRef.current = setTimeout(() => {
+          setShowInspectionColors(false)
+        }, 10000)
+      }
     } catch (err) {
       console.error('Inspection fetch error:', err)
     }
@@ -98,6 +116,14 @@ function Status() {
       fetchInspectionResult()
     }, 20000)
     return () => clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (inspectionColorTimeoutRef.current) {
+        clearTimeout(inspectionColorTimeoutRef.current)
+      }
+    }
   }, [])
 
   // Auto-refresh image every 5 seconds
@@ -210,26 +236,38 @@ function Status() {
         <div className={styles.imageSection}>
           <div className={styles.imageContainer}>
             {/* Corner Labels - Red if blocked (true), Green if clean (false) */}
-            <span className={`${styles.cornerLabel} ${styles.topLeft} ${inspectionResult?.lu ? styles.blocked : styles.clean}`}>
-              LU {inspectionResult?.lu ? '🔴' : '🟢'}
+            <span className={`${styles.cornerLabel} ${styles.topLeft} ${showInspectionColors ? (inspectionResult?.lu ? styles.blocked : styles.clean) : styles.defaultLabel}`}>
+              LU
+              {showInspectionColors && (
+                <span className={styles.statusIndicator}>
+                  {inspectionResult?.lu ? '🔴' : '🟢'}
+                </span>
+              )}
             </span>
-            <span className={`${styles.cornerLabel} ${styles.topRight} ${inspectionResult?.ru ? styles.blocked : styles.clean}`}>
-              RU {inspectionResult?.ru ? '🔴' : '🟢'}
+            <span className={`${styles.cornerLabel} ${styles.topRight} ${showInspectionColors ? (inspectionResult?.ru ? styles.blocked : styles.clean) : styles.defaultLabel}`}>
+              RU
+              {showInspectionColors && (
+                <span className={styles.statusIndicator}>
+                  {inspectionResult?.ru ? '🔴' : '🟢'}
+                </span>
+              )}
             </span>
-            <span className={`${styles.cornerLabel} ${styles.bottomLeft} ${inspectionResult?.ld ? styles.blocked : styles.clean}`}>
-              LD {inspectionResult?.ld ? '🔴' : '🟢'}
+            <span className={`${styles.cornerLabel} ${styles.bottomLeft} ${showInspectionColors ? (inspectionResult?.ld ? styles.blocked : styles.clean) : styles.defaultLabel}`}>
+              LD
+              {showInspectionColors && (
+                <span className={styles.statusIndicator}>
+                  {inspectionResult?.ld ? '🔴' : '🟢'}
+                </span>
+              )}
             </span>
-            <span className={`${styles.cornerLabel} ${styles.bottomRight} ${inspectionResult?.rd ? styles.blocked : styles.clean}`}>
-              RD {inspectionResult?.rd ? '🔴' : '🟢'}
+            <span className={`${styles.cornerLabel} ${styles.bottomRight} ${showInspectionColors ? (inspectionResult?.rd ? styles.blocked : styles.clean) : styles.defaultLabel}`}>
+              RD
+              {showInspectionColors && (
+                <span className={styles.statusIndicator}>
+                  {inspectionResult?.rd ? '🔴' : '🟢'}
+                </span>
+              )}
             </span>
-
-            {imageLoading && !imageError && (
-              <div className={styles.loadingOverlay}>
-                <div className={styles.loadingText}>
-                  Updating...
-                </div>
-              </div>
-            )}
 
             {imageError && (
               <div className={styles.errorContainer}>
