@@ -52,6 +52,7 @@ function System() {
           body: JSON.stringify({ state: desiredState.toLowerCase() }),
         });
         const data = await res.json();
+        console.log(data.data);
         const espState = data?.data?.state ? String(data.data.state).toUpperCase() : "UNKNOWN";
         
         console.log(`📡 [Poll ${pollId}] [${attempts + 1}s] ESP State: ${espState} | Target: ${desiredState}`);
