@@ -31,80 +31,108 @@ function System() {
   };
 
   // Poll cloud API for 80 seconds in background
-  const pollCloudAPI = async (desiredState, pollId) => {
-    const maxAttempts = 80;
+  // const pollCloudAPI = async (desiredState, pollId) => {
+  //   const maxAttempts = 80;
     
-    console.log(`🔄 [Poll ${pollId}] Background polling started - Target: ${desiredState}`);
+  //   console.log(`🔄 [Poll ${pollId}] Background polling started - Target: ${desiredState}`);
     
-    for (let attempts = 0; attempts < maxAttempts; attempts++) {
-      // Check if this polling was cancelled
-      if (pollingRef.current !== pollId) {
-        console.log(`❌ [Poll ${pollId}] Cancelled - New polling started`);
-        return;
-      }
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      try {
-        const res = await fetch(CLOUD_CONTROL_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ state: desiredState.toLowerCase() }),
-        });
-        const data = await res.json();
-        console.log(data.data);
-        const espState = data?.data?.state ? String(data.data.state).toUpperCase() : "UNKNOWN";
-        
-        console.log(`📡 [Poll ${pollId}] [${attempts + 1}s] ESP State: ${espState} | Target: ${desiredState}`);
-        
-        if (espState === desiredState) {
-          console.log(`✅ [Poll ${pollId}] SUCCESS at ${attempts + 1}s - ESP confirmed ${desiredState}`);
-          if (pollingRef.current === pollId) {
-            setIsPolling(false);
-          }
-          return;
-        }
-      } catch (err) {
-        console.error(`[Poll ${pollId}] [${attempts + 1}s] Cloud API error:`, err);
-      }
-    }
-    
-    console.warn(`⚠️ [Poll ${pollId}] Timeout after 80 seconds`);
-    if (pollingRef.current === pollId) {
-      setIsPolling(false);
-    }
-  };
+  //   for (let attempts = 0; attempts < maxAttempts; attempts++) {
 
+  //     if (pollingRef.current !== pollId) {
+  //       console.log(`❌ [Poll ${pollId}] Cancelled - New polling started`);
+  //       return;
+  //     }
+      
+  //     await new Promise(resolve => setTimeout(resolve, 1000));
+      
+  //     try {
+  //       const res = await fetch(CLOUD_CONTROL_URL, {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({ state: desiredState.toLowerCase() }),
+  //       });
+  //       const data = await res.json();
+  //       console.log(data.data);
+  //       const espState = data?.data?.state ? String(data.data.state).toUpperCase() : "UNKNOWN";
+        
+  //       console.log(`📡 [Poll ${pollId}] [${attempts + 1}s] ESP State: ${espState} | Target: ${desiredState}`);
+        
+  //       if (espState === desiredState) {
+  //         console.log(`✅ [Poll ${pollId}] SUCCESS at ${attempts + 1}s - ESP confirmed ${desiredState}`);
+  //         if (pollingRef.current === pollId) {
+  //           setIsPolling(false);
+  //         }
+  //         return;
+  //       }
+  //     } catch (err) {
+  //       console.error(`[Poll ${pollId}] [${attempts + 1}s] Cloud API error:`, err);
+  //     }
+  //   }
+    
+  //   console.warn(`⚠️ [Poll ${pollId}] Timeout after 80 seconds`);
+  //   if (pollingRef.current === pollId) {
+  //     setIsPolling(false);
+  //   }
+  // };
+
+  // const toggleSystem = async () => {
+  //   const currentState = status;
+  //   const newState = status === "ON" ? "OFF" : "ON";
+    
+    
+  //   const newPollId = Date.now();
+  //   pollingRef.current = newPollId;
+    
+   
+  //   setStatus(newState);
+
+  //   try {
+      
+  //     await fetch(`${API_BASE}/api/system-state`, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       credentials: "include",
+  //       body: JSON.stringify({ state: newState }),
+  //     });
+
+  //     console.log(`✓ Button: ${newState}, Database: Updated`);
+      
+      
+  //     setIsPolling(true);
+  //     pollCloudAPI(newState, newPollId);
+  //   } catch (err) {
+  //     console.error("API Error:", err);
+  //     setStatus(currentState);
+  //   }
+  // };
   const toggleSystem = async () => {
-    const currentState = status;
-    const newState = status === "ON" ? "OFF" : "ON";
-    
-    // Cancel any existing polling
-    const newPollId = Date.now();
-    pollingRef.current = newPollId;
-    
-    // 1. Immediately change button UI
-    setStatus(newState);
+  const currentState = status;
+  const newState = status === "ON" ? "OFF" : "ON";
+  
+  setStatus(newState);
 
-    try {
-      // 2. Update database
-      await fetch(`${API_BASE}/api/system-state`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ state: newState }),
-      });
+  try {
+    // Save to MongoDB
+    await fetch(`${API_BASE}/api/system-state`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ state: newState }),
+    });
 
-      console.log(`✓ Button: ${newState}, Database: Updated`);
-      
-      // 3. Start new background polling (cancels previous)
-      setIsPolling(true);
-      pollCloudAPI(newState, newPollId);
-    } catch (err) {
-      console.error("API Error:", err);
-      setStatus(currentState);
-    }
-  };
+    // Send to ESP32 ONCE
+    await fetch(CLOUD_CONTROL_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ state: newState.toLowerCase() }),
+    });
+
+    console.log(`✅ Sent ${newState} to ESP32`);
+  } catch (err) {
+    console.error("Error:", err);
+    setStatus(currentState);
+  }
+};
 
   useEffect(() => {
     setIsLoading(true);
